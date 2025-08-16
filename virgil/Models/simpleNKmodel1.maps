@@ -1,0 +1,43 @@
+METADATA
+Name: simpleNKmodel1
+Description: Three equation NK model with 'optimal' Taylor rule
+Author: Richard Harrison
+
+MODEL VARIABLES
+Output gap:                 y
+Inflation:                  pie
+Natural real rate:          rn
+Policy rate:                r
+Real debt:                  b
+
+MODEL OBSERVABLES
+Annualised policy rate:     rAnn
+Annualised natural rate:    rnAnn
+Annualised inflation:       piAnn
+
+SHOCKS
+Natural rate shock:         etarn
+Mon pol shock:              etamp
+
+MODEL EQUATIONS
+IS curve:                   y{t}    = y{t+1} - sigma*(r{t} - pie{t+1} - rn{t})
+Phillips curve:             pie{t}  = beta*pie{t+1} + kappa*y{t}
+Monetary policy rule:       r{t}    = phipie*pie{t} + rn{t} + phib*(b{t} - y{t}) + etamp{t}
+Natural rate process:       rn{t}   = rho*rn{t-1} + etarn{t}
+Debt accumulation:          b{t}    = phib*b{t-1} + r{t-1} - pie{t} + y{t}
+
+MEASUREMENT EQUATIONS
+Annualised policy rate:     rAnn{t} = rAnnSS + 4*r{t}
+Annualised natural rate:    rnAnn{t} = rAnnSS + 4*rn{t}
+Annualised inflation:       piAnn{t} = 4*pie{t}
+
+PARAMETERS
+Discount factor:            beta:       0.99 
+NKPC slope:                 kappa:      0.025
+IS curve slope:             sigma:      1
+TR weight on inflation:     phipie:     1.01
+Natural rate persistence:   rho:        0.85
+Phib:                       phib:       1.2              
+
+STEADY STATES & PARAMETER TRANSFORMATIONS
+Steady state policy rate:   rAnnSS:     100*((1/beta)^4-1) 
