@@ -1,0 +1,91 @@
+METADATA
+Name: modified BGG model_ver1
+Description: doesn't include finance stability in monetary rule
+Author: macro2
+
+MODEL VARIABLES
+Output gap:                 y
+Inflation:                  pie
+Policy rate:                rn
+Net worth:                  n
+Productivity:               a
+Consumption:                c
+Entrepreneur consumption:   ce
+Risk spread:                rk
+Price of capital:           q
+Capital:                    k
+Markup:                     x
+Labor:                      h
+Leverage:                   lev
+Government spending:        g
+Investment:                 i
+Natural real rate:          nr
+Preference shock process:   z
+
+MODEL OBSERVABLES
+Annualised policy rate:     rAnn
+Annualised inflation:       piAnn
+Annualised natural rate:    rnAnn
+
+SHOCKS
+Productivity shock:         ea
+Policy shock:               etamp
+Net worth shock:            en
+Government spending shock:  eg
+Natural rate shock:         etarn
+
+MODEL EQUATIONS
+Resource constraint:        y{t} = cy*c{t} + iy*i{t} + gy*g{t} + cey*ce{t}
+Euler:                      c{t} = -(rn{t} - pie{t+1} - nr{t}) + c{t+1}
+Entrepreneur consumption:   ce{t} = n{t}
+Risk spread:                rk{t+1} = rn{t} - pie{t+1} - nu*(n{t} - q{t} - k{t})
+Return to capital:          rk{t} = (1-epsi)*(y{t} - k{t-1} - x{t}) + epsi*q{t} - q{t-1}
+Price of capital:           q{t} = varphi*(i{t} - k{t-1})
+Production function:        y{t} = a{t} + alpha*k{t-1} + Omega*h{t}
+FOC for labor:              y{t} = x{t} + c{t} + (1+eta)*h{t}
+Phillips curve:             pie{t} = -kappa*x{t} + beta*pie{t+1}
+Capital accumulation:       k{t} = delta*i{t} + (1-delta)*k{t-1}
+Evolution of net worth:     n{t} = gamma*RRks*(rk{t} - (rn{t-1} - pie{t})) + (rn{t-1} - pie{t}) + n{t-1} + en{t}
+Monetary policy rule:       rn{t} = rho*rn{t-1} + (1-rho)*(zeta*pie{t} + zetay*y{t} + zetaf*lev{t}) + srn*etamp{t}
+Productivity shock:         a{t} = rhoa*a{t-1} + sa*ea{t}
+Government spending shock:  g{t} = rhog*g{t-1} + sg*eg{t}
+Leverage:                   lev{t} = q{t} + k{t} - n{t}
+Preference shock:           z{t}  = rhoz*z{t-1}
+Natural rate process:       nr{t} = rhonr*nr{t-1} + (1-rhonr)*((1-rhoa)*a{t} + (1-rhoz)*z{t}) + etarn{t}
+
+MEASUREMENT EQUATIONS
+Annualised policy rate:     rAnn{t} = rAnnSS + 4*rn{t}
+Annualised inflation:       piAnn{t} = 4*pie{t}
+Annualised natural rate:    rnAnn{t} = rAnnSS + 4*nr{t}
+
+PARAMETERS
+Expenditure shares of c:    cy:         0.51
+Expenditure shares of i:    iy:         0.18
+Expenditure shares of g:    gy:         0.2
+Expenditure shares of ce:   cey:        0.11
+Accelerator parameter:      nu:         0.2
+risk parameter:             epsi:       0.96
+monetary policy smoothing:  rho:        0.9
+AR productivity:            rhoa:       0.95
+AR goverment spending:      rhog:       0.95
+Taylorrule inflation react: zeta:       1.5
+Taylorrule output react:    zetay:      0.5
+NKPC slope:                 kappa:      0.04
+shares of consumer labor:   Omega:      0.64
+Frisch eslasticity_inverse: eta:        0.33
+NKPC expectation par:       beta:       0.99
+Depreciation rate:          delta:      0.025
+Death rate:                 gamma:      0.9728
+Return rate for capital:    RRks:       1.02
+productivity shock par:     sa:         1
+government shock par:       sg:         1   
+policy rule shock par:      srn:        0.5
+capital adjustment cost:    varphi:     0.25
+capital share:              alpha:      0.35
+Preference shock:           rhoz:       0.5
+natural rate process:       rhonr:      0.9
+Taylorrule Leverage react:  zetaf:      0.5
+
+
+STEADY STATES & PARAMETER TRANSFORMATIONS
+Steady state policy rate:   rAnnSS:     100*((1/beta)^4-1) 
