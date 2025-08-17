@@ -26,7 +26,7 @@ addpath(genpath('MAPSlite'));
 addpath(genpath('Results'));
 
 %% SPECIFY RESULTS FILE NAME
-resultsFileName = 'E:\github_jh\jh_hub\sfers\2025-1 sfers macro2\haberis(2019)_modified_real\Results\withfinancial';
+resultsFileName = [thisDir,'Results\withfinancial.mat'];
 
 %% SPECIFY SAVING & FORMAT OPTIONS
 saveTeXfigures = true;

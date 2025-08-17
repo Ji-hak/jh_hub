@@ -13,8 +13,8 @@
 close all; clear variables; delete('*.asv'); clc;
 
 %% PATHS (edit if needed)
-file_noFS = 'E:/github_jh/jh_hub/sfers/2025-1 sfers macro2/haberis(2019)_modified_real/Results/withoutfinancial';
-file_FS   = 'E:/github_jh/jh_hub/sfers/2025-1 sfers macro2/haberis(2019)_modified_real/Results/withfinancial';
+file_noFS = [thisDir,'Results\withoutfinancial.mat'];
+file_FS   = [thisDir,'Results\withfinancial.mat'];
 
 %% ADD DIRECTORIES
 fullPathNameForThisFile = mfilename('fullpath');

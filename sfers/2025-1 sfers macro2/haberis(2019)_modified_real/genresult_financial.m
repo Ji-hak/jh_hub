@@ -68,7 +68,7 @@ if doSensitivityAnalysis
 end
 
 %% SET RESULTS FILE NAME
-saveFileName = [thisDir,'smallModelResults.mat'];
+saveFileName = [thisDir,'Results\withfinancial.mat'];
 
 %% STEP 0: SET-UP
 % Create model and unpack
@@ -427,5 +427,5 @@ if doSensitivityAnalysis
         sumLiftOffDateProbsKplus1LowCred;
 end
 if saveResults
-    save('E:\github_jh\jh_hub\sfers\2025-1 sfers macro2\haberis(2019)_modified_real\Results\withfinancial');
+    save(saveFileName,'results');
 end
