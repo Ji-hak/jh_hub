@@ -1,0 +1,177 @@
+---
+title: "test run for micro founded abm (vibe coding)"
+format:
+  html: default
+  pdf: default
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+# Intro
+**핵심 목표**:
+1.  Julia 프로젝트 환경 설정하기
+2.  `Agents.jl`을 이용해 ABM의 기본 구조 만들기
+3.  `Optim.jl`을 이용해 Agent의 효용 극대화 문제 풀기
+4.  시뮬레이션을 실행하고 결과 확인하기
+
+---
+```{julia}
+import Pkg
+
+Pkg.add("Agents")
+Pkg.add("Optim")
+Pkg.add("Plots")
+Pkg.add("DataFrames")
+Pkg.add("Statistics")
+Pkg.add("Revise")
+```
+
+# 2. 경제 모형 설계
+
+우리는 매우 간단한 경제를 가정합니다. 이 경제에는 **가계(Household)** 라는 단일 종류의 Agent만 존재합니다.
+
+## 가계(Household)의 문제
+
+가계는 **소비(consumption, c)** 와 **노동(labor, l)** 을 통해 효용을 얻습니다. 가계의 목표는 주어진 임금(wage, w) 하에서 자신의 효용을 극대화하는 것입니다.
+
+-   **효용 함수 (Utility Function)**: 
+    $\max_{c, l} \quad U(c, l) = \log(c) - \frac{l^2}{2}$
+
+-   **예산 제약 (Budget Constraint)**: 
+    $c \le w \cdot l$
+
+가계는 합리적이므로 항상 소득을 전부 소비합니다 (`c = w * l`). 따라서 가계의 문제는 노동(l)을 선택하여 효용을 극대화하는 단일 변수 문제로 단순화됩니다.
+
+$\max_{l} \quad \log(w \cdot l) - \frac{l^2}{2}$
+
+우리는 이 최적화 문제를 `Optim.jl`을 사용하여 수치적으로 풀 것입니다.
+
+```{julia}
+using Agents
+using Optim
+using Plots
+using DataFrames
+using Statistics
+using Revise
+gr()
+```
+
+---
+## 3.2. Agent 정의하기
+
+`Agents.jl`의 `AbstractAgent`를 상속받아 우리 모델의 `Household` Agent를 정의합니다.
+
+-   `mutable struct`: 내장된 속성(field)들의 값을 변경할 수 있는 복합 데이터 타입입니다.
+-   `<: AbstractAgent`: `AbstractAgent` 타입을 상속받는다는 의미입니다. `Agents.jl`의 모든 Agent는 이를 따라야 합니다.
+-   `id::Int`: `Agents.jl`이 요구하는 필수 속성입니다.
+-   `labor::Float64`, `consumption::Float64`: 우리 모델에서 각 가계의 노동 공급량과 소비량을 저장하기 위한 속성입니다.
+
+```{julia}
+mutable struct Household <: AbstractAgent
+    # Agents.jl 필수 속성
+    id::Int
+
+    # 모델 고유 속성
+    labor::Float64
+    consumption::Float64
+end
+```
+
+---
+## 3.4. Agent의 행동 함수 정의하기
+
+이 부분이 모델의 핵심입니다. 각 `Household` Agent가 매 스텝마다 어떻게 행동할지를 정의하는 함수입니다.
+
+-   `agent_step!(h::Household, model)`: 이 함수는 첫 번째 인자가 `Household` 타입일 때만 호출됩니다.
+
+```{julia}
+function agent_step!(h::Household, model)
+    # 1. 모델의 거시 변수(임금)를 가져옵니다.
+    wage = model.wage
+
+    # 2. 최적화할 목적 함수를 정의합니다.
+    objective_function(l) = -(log(wage * l[1]) - (l[1]^2) / 2)
+
+    # 3. 노동 공급량의 초기 추정치를 설정합니다.
+    initial_l = [1.0]
+
+    # 4. 제약 없는 최적화 문제를 풉니다.
+    result = Optim.optimize(objective_function, initial_l, NelderMead())
+
+    # 5. 최적화 결과를 Agent의 속성에 저장합니다.
+    optimal_labor = Optim.minimizer(result)[1]
+    h.labor = optimal_labor
+    h.consumption = wage * optimal_labor
+end
+```
+
+## 3.5. 시뮬레이션 초기화 및 실행
+
+이제 모델을 만들고, Agent를 추가하고, 시뮬레이션을 실행할 차례입니다.
+
+```{julia}
+# 1. 모델 초기화
+#    - `AgentBasedModel`이 ABM의 기본 컨테이너입니다.
+#    - `properties`에 모델 전체의 변수를 저장합니다.
+properties = Dict(:wage => 1.5)
+model = AgentBasedModel(Household, properties = properties)
+
+# 2. Agent 추가
+num_agents = 100
+for i in 1:num_agents
+    add_agent!(model, 0.0, 0.0) # labor, consumption 초기값
+end
+
+# 3. 데이터 수집 설정
+adata = [(:labor, mean), (:consumption, mean)]
+
+# 4. 시뮬레이션 실행 (1 스텝)
+results, _ = run!(model, agent_step!, 1; adata=adata)
+
+# 5. 결과 출력
+println(results)
+```
+
+## 3.6. (심화) 임금이 변하는 시나리오
+
+이번에는 매 스텝마다 임금이 조금씩 오르는 동적인 시나리오를 시뮬레이션해 보겠습니다. 이를 위해 `model_step!` 함수를 정의합니다.
+
+```{julia}
+# 모델 스텝 함수: 매 스텝마다 임금을 0.1씩 올립니다.
+function model_step!(model)
+    model.wage += 0.1
+end
+
+# 모델 재초기화
+model = AgentBasedModel(Household, properties = Dict(:wage => 1.0))
+for i in 1:num_agents
+    add_agent!(model, 0.0, 0.0)
+end
+
+
+# 20 스텝 동안 시뮬레이션 실행
+results_dynamic, _ = run!(model, agent_step!, model_step!, 20; adata=adata)
+
+# 결과 출력
+println(results_dynamic)
+
+# 결과 시각화
+plot(results_dynamic.step, results_dynamic.mean_labor, label="Average Labor Supply", xlabel="Time Step", ylabel="Labor")
+plot!(twinx(), results_dynamic.step, results_dynamic.mean_consumption, label="Average Consumption", ylabel="Consumption", color=:red, legend=:bottomright)
+
+```
+
+위 코드를 실행하면 임금이 상승함에 따라 가계들이 노동 공급과 소비를 늘리는 것을 보여주는 그래프가 나타날 것입니다. 이것이 바로 미시적 최적화 원리가 거시적 현상으로 나타나는 ABM의 특징입니다.
+
+---
+
+# 4. 결론 및 다음 단계
+
+이 튜토리얼을 통해 Julia와 `Agents.jl`, `Optim.jl`을 사용하여 micro-foundation을 갖는 간단한 ABM을 구축하는 전 과정을 살펴보았습니다.
+
+**다음 단계 아이디어**:
+-   **기업(Firm) Agent 추가**: 이윤을 극대화하는 기업 Agent를 추가하여 노동 수요를 내생적으로 결정하게 할 수 있습니다.
+-   **시장 메커니즘 구현**: `model_step!`에서 노동 시장과 상품 시장의 수요-공급을 일치시켜 임금과 물가가 동적으로 결정되도록 모델을 확장할 수 있습니다.
+-   **다양한 효용/생산 함수 실험**: 더 복잡하고 현실적인 함수들을 사용하여 모델을 정교화할 수 있습니다.

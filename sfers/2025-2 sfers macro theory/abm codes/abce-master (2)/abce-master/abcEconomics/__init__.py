@@ -53,7 +53,13 @@ import queue
 import logging
 import multiprocessing as mp
 from collections import OrderedDict
-from .logger import ThreadingDatabase, MultiprocessingDatabase
+class DummyDB:
+    def __init__(self, *args, **kwargs): self.directory = ''
+    def start(self): pass
+    def finalize(self, *args, **kwargs): pass
+
+ThreadingDatabase = DummyDB
+MultiprocessingDatabase = DummyDB
 from .agent import Agent  # noqa: F401
 from .group import Group
 from .notenoughgoods import NotEnoughGoods  # noqa: F401

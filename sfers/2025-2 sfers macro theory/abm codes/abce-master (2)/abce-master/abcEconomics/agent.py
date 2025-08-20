@@ -28,13 +28,13 @@ Logging and data creation, see :doc:`Database`.
 
 Messaging between agents, see :doc:`Messenger`.
 """
-from .logger import Logger
+# from .logger import Logger
 from .agents.trader import Trader
 from .agents.messenger import Messenger
 from .agents.goods import Goods
 
 
-class Agent(Logger, Trader, Messenger, Goods):
+class Agent(Trader, Messenger, Goods):
     """ Every agent has to inherit this class. It connects the agent to the
     simulation and to other agent. The :class:`abcEconomics.Trade`,
     :class:`abcEconomics.Logger` and :class:`abcEconomics.Messenger` classes are included.

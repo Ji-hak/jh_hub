@@ -13,8 +13,8 @@
 close all; clear variables; delete('*.asv'); clc;
 
 %% PATHS (edit if needed)
-file_noFS = [thisDir,'Results\withoutfinancial.mat'];
-file_FS   = [thisDir,'Results\withfinancial.mat'];
+file_noFS = ['Results\withoutfinancial.mat'];
+file_FS   = ['Results\withfinancial.mat'];
 
 %% ADD DIRECTORIES
 fullPathNameForThisFile = mfilename('fullpath');

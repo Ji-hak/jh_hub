@@ -1,0 +1,638 @@
+---
+title: Julia 튜토리얼 by P.H.B.
+format:
+  html: default
+  pdf: default
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+참고 https://juliadynamics.github.io/Agents.jl/stable/, & ChatGPT
+
+# 패키지 설치 
+using Pkg; Pkg.add("Agents")
+(다음을 먼저 실행하면 편리하다.)
+using Agents, DataFrames, Statistics, Distributions, GLM, Econometrics
+Random, CairoMakie, Base.Threads, CSV
+
+# step 0 : Agents.jl simulation의 가장 처음은 다음을 시행하는 것
+using Agents
+
+# step 1: Create the space
+## 1)discrete spaces
+### 1-1) GraphSpace
+정의: GraphSpace(g::AbstractGraph)는 네트워크(그래프) 구조 위에서 에이전트가 존재하고 이동하는 공간을 나타냅니다.
+기반 구조: LightGraphs.jl이나 Graph.jl로 정의된 그래프를 기반으로 함.
+위치 정보: 각 에이전트는 그래프의 노드(node) 위에 위치함.
+이동 방식: 에이전트는 현재 노드에서 인접 노드(connected neighbors)로만 이동 가능.
+활용 예시: 사회적 네트워크 모델, 도로 네트워크에서의 이동, 감염병 전파 모델 등.
+
+### 1-2) GridSpace
+정의: GridSpace((m, n), periodic=false)는 격자형 2차원(또는 다차원) 공간을 정의합니다.
+위치 정보: 각 에이전트는 (x, y)와 같은 격자 좌표에 위치.
+이동 방식: 상하좌우(또는 대각 포함)의 이웃 격자칸으로 이동.
+주변 탐색: nearby_agents 등으로 유클리드 거리나 이웃 칸 기반 탐색이 가능.
+활용 예시: 군중 행동, 생태계, 병해 전파 등 물리적 공간에서의 상호작용 모델링.
+
+:euclidean metric 
+직선거리를 기준으로 이웃
+:chebyshev metric 
+어떤 점을 기준으로 정육면체 안에 있는 모든 점이 이웃
+:manhattan metric 
+거리를 좌표의 차이의 절댓값으로 측정하여 특정 거리 안에 있는 모든 점이 이웃
+
+한 위치에 한 에이전트만 위치-> GridSpaceSingle, 주어진 경계를 넘을 수 없을 때(예를 들어 왼쪽 가장자리에 있을 때 더욱 왼쪽으로 움직일 수 없음) -> periodic = false
+
+	size = (10, 10)
+	space = GridSpaceSingle(size; periodic = false, metric = :chebyshev)
+
+---
+# step 2: agent command
+에이전트 타입 설정
+Person이라는 에이전트 타입이 있다. 2차원 격자공간에서 움직이는 기본 타입일 때->GridAgent{2}, age(정수)와 money(부동소주점)라는 상태가 있을 때->age::Int, money::Float64
+```{julia}
+@agent struct Person(GridAgent{2})
+    age::Int
+    money::Float64
+    mood::Bool
+end 
+```
+
+구체적으로 에이전트를 만들 때는 다음과 같이 이루어진다.
+예시
+example_agent = SchellingAgent(id = 1, pos = (2, 3), mood = true, group = 1)
+
+1. id — 에이전트의 고유 식별자
+정의: 각 에이전트가 생성될 때 자동으로 부여되는 정수형 고유번호
+타입: Int
+용도: 에이전트를 개별적으로 식별할 수 있도록 함
+예: 특정 에이전트를 삭제하거나 찾을 때 사용
+2. pos — 에이전트의 위치
+정의: 에이전트가 공간 상에서 어디에 위치해 있는지를 나타내는 필드
+타입은 사용하는 공간 타입에 따라 달라짐:
+GridSpace{2}: Tuple{Int, Int} (예: (3,4))
+ContinuousSpace{2}: NTuple{2, Float64} (예: (3.1, 4.7))
+GraphSpace: Int (그래프의 노드 ID)
+
+@agent는 id와 pos 타입을 자동적으로 정해준다. @agent를 쓰지 않는다면 
+mutable struct MyAgent
+    id::Int
+    pos::Tuple{Int, Int}  # GridAgent{2}에 해당하는 위치 타입
+    mood::Bool
+    group::Int
+end
+처럼 id와 pos를 구체적으로 밝혀야 하는 귀찮음이 있다. 
+
+# step 3: evolution rules in discrete time
+우리가 지금 사용하고 있는 AgentBasedModel의 타입은 StandardABM, 즉 시간이 이산적인 경우이다. 
+At each discrete step of the simulation, the agent stepping function is applied once to all scheduled agents, and the model stepping function is applied once to the model. 
+
+## 1) model stepping function
+모델 전체에 한 번 실행. step당 한 번 실행. 모델 전체의 상태, 환경 변화를 업데이트
+model_step!(모델이름) : 모델 단위의 시간 진행 함수. 시뮬레이션의 각 시간 스텝마다 한 번 실행. 모델 전체의 상태, 환경 변화 업데이트. (이름은 사용자가 지정해도 되기 때문에 model_step!이 아니라 environment_step!처럼 해도 된다.)
+예시
+특정 에이전트가 이웃들과 돈을 주고받는 행위를 모델링하자.
+
+```{julia}
+function model_step!(model)
+    exchange = model.exchange # 모델 특성인 'exchange'를 얻는다.
+    agent = model[5]  # ID가 5인 에이전트를 가져온다. 
+    for neighbor in nearby_agents(model, agent, 1)  
+              # 거리 1 이내에 있는 이웃 에이전트들을 순회한다. 
+        transfer = minimum(neighbor.money, exchange)
+        agent.money += transfer
+        neighbor.money -= transfer
+    end
+    return # function end. As it is in-place it `return`s nothing.
+end
+```
+
+## 2) agent stepping function
+각 에이전트 개별적으로 실행. 모든 step에서 에이전트 수만큼 반복. 에이전트의 행동을 정의. agent_step!(에이전트, 모델이름): 사용자 정의 에이전트 행동 함수. (마찬가지로 이름은 뜻대로 해도 된다.)
+예시
+function agent_step!(agent, model)  
+#파이썬에서 def f(a,b):과 같은 문법으로 정의. agent, model은 매개변수
+```{julia}
+    neighbors = nearby_agents(model, agent, 1)
+
+    if isempty(neighbors)
+        return  # 주변이 아무도 없으면 그대로 있음
+    end
+
+    same_group = count(n -> n.group == agent.group, neighbors)
+    similarity = same_group / length(neighbors)
+
+    if similarity < model.threshold
+        move_agent_randomly!(agent, model)
+    end
+end
+```
+
+---
+# step 4: AgentBasedModel
+StandardABM(): 기본 모델 타입.
+model = StandardABM(에이전트, 스페이스 ; properties =properties 이름, model_step! = 모델 스텝함수 이름, agent_step! =에이전트 스텝함수 이름, scheduler = 스케듈러 이름) 
+
+여기서 properties란?
+개별 에이전트가 아니라 모델 전체에 적용되는 파라미터 값, 환경설정 값, 상태 등을 담는 딕셔너리이다. 
+	properties = Dict(:key1 => value1, :key2 => value2, ...)
+예시 (3 이상일 때 행복하다고 간주할 때)
+	properties = Dict(:min_to_be_happy => 3)
+
+여기서 scheduler란?
+agent stepping function을 사용했다면 scheduler가 중요해진다. 에이전트를 어떤 순서로 실행할지 결정해주는 함수이다.
+
+이름 | 의미 |특징
+Schedulers.Randomly() | 매 스텝마다 순서를 랜덤하게 | 결과의 재현성이 낮음
+Schedulers.ByID() | ID 순서대로 실행 | 재현가능, 항상 동일
+Schedulers.Shuffledonce()
+처음 시작 시에만 섞고 이후는 고정
+한 번만 섞고 순서 고정
+Schedulers.Fastest()
+병렬 실행 시 가장 빠른 실행 경로
+병렬성 최적화
+사용자정의 
+사용자가 직접 순서 정의
+여러 조건 추가 가능
+
+만약 model을 정의할 때 scheduler를 정해두었다면 scheduled_agent(model)은 model.schduler에 따라 정해진 순서로 에이전트를 반환하게 된다. 
+for agent in scheduled_agents(model)
+    agent_step!(agent, model)
+end
+
+사용자 정의(custom) scheduler 만들기
+예시
+function custom_scheduler(model)
+	agents = allagents(model)   #모델의 모든 에이전트를 가져온다. 
+	group1 = filter(a -> a.group == 1, agents) #group이 1인 에이전트만 필터링하여 group1벡터에 저장
+	others = filter(a -> a.group != 1, agents)   #1이 아닌 나머지 에이전트	
+	return vcat(group1, others)   #벡터들을 모아 하나의 실행순서 벡터로 만든다. 
+end
+
+에이전트 추가하기
+add_agent!()함수를 이용한다. 
+add_agent!(에이전트 타입, 모델; pos=..., 속성1=..., 속성2=...)
+
+우리는 앞에서 
+@agent struct Person(GridAgent{2})
+    age::Int
+    money::Float64
+    mood::Bool
+end
+처럼 에이전트를 지정했었다.
+그리고 모델은 다음처럼 지정했다고 하자. 
+model = ABM(Person, GridSpace((5,5)))
+
+add_agent!(Person, model; pos=(2,3), age=25, money=100.0, mood=True)
+에이전트 타입과 모델, pos는 지정해야 하고 나머지 속성은 선택적. 
+(에이전트의 수를 확인하고 싶다면 nagents(모델이름))
+
+Random number generator(RNG)
+재현 가능한 난수 시퀀스를 생성한다. (seed!와 함께 사용해야 함)
+random 모듈 사용
+using Random
+기본적으로는 다음처럼 사용된다. 
+rand(1:10) # 1부터 10사이의 정수. 재현되지 않음
+
+Random.seed!(123) #123같은 숫자는 사용자 마음대로. 단 seed!(123)과 seed!(12)는 다르다.
+rand(1:10) # 예 2
+rand(1:10) # 예 6
+이후에 다시 다음과 같이 하면 다시 2,6이 나온다. 
+Random.seed!(123) 
+rand(1:10) 
+rand(1:10)
+
+혹은 
+rng = MersenneTwister(42)
+rand(rng, 1:10)처럼 해도 된다. 
+
+일반적으로 다음 RNG를 많이 사용한다. 
+using Random: Xoshiro
+
+schelling = StandardABM(
+    SchellingAgent,
+    space;
+    properties,
+    agent_step! = schelling_step!,
+    scheduler,
+    rng = Xoshiro(12) 
+)
+이렇게 모델을 설정하면 모델 안에서 발생하는 모든 무작위 행동의 시드와 난수 흐름을 고정한다. 동일한 시드로 생성하면 동일한 결과가 나와 재현이 가능하다. 
+
+모델을 초기화하는 함수, 키워드 기반 함수
+모델을 파라미터만 달리하여 여러 번 반복하여 생성하고 싶을 때가 있다. 이때 모델을 초기화하는 함수와 그 함수에 들어가는 입력을 키워드로 설정하면 편리하다. 동일한 파라미터를 넣으면 항상 동일한 모델을 재현할 수 있고 파라미터 수정이 쉽다.
+예를 들어 모델을 다음처럼 만들었다고 하자.
+
+size = (10, 10)
+space = GridSpaceSingle(size; periodic = false, metric = :chebyshev)
+properties = Dict(:min_to_be_happy => 3)
+rng = Xoshiro((123)
+model1 = StandardABM(person, space; agent_step! = schelling_step!, properties, rng, scheduler = Schedulers.Randomly())
+처럼 하면 후에 seed나 size 등을 바꾸어 다시 실행하고 싶을 때 하나하나 바꿔야 하는 귀찮음이 있다. 
+
+대신 초기화 함수를 만들자
+예시
+function initialize(; total_agents = 320, gridsize = (20, 20), min_to_be_happy = 3, seed = 125)
+    space = GridSpaceSingle(gridsize; periodic = false)
+    properties = Dict(:min_to_be_happy => min_to_be_happy)
+    rng = Xoshiro(seed)
+    model = StandardABM(
+        SchellingAgent, space;
+        agent_step! = schelling_step!, properties, rng,
+        scheduler = Schedulers.Randomly() # all agents are activated once at random 단 rng = Xoshiro()를 포함하므로 시드가 같으면 재현가능
+    )
+    for n in 1:total_agents
+        add_agent_single!(model; mood = false, group = n < total_agents / 2 ? 1 : 2)
+    end
+    return model
+end
+
+이때 initialize()처럼만 시행해도 ‘초기값 total_agents = 320, gridsize = (20, 20), min_to_be_happy = 3, seed = 125’에 따라 시행된다. 
+model2 = initialize(total_agents=100, gridsize = (10, 10), min_to_be_happy = 3, seed =12)
+로 시행하면 다른 모델이 만들어진다. 
+(function initialize(; total_agents, gridsize, min_to_be_happy, seed)처럼 초기값을 설정하지 않고 해도 된다)
+이렇게 만들어진 모델을 객체, 인스턴스라고 부를 수 있으며 파이썬의 class와 줄리아의 initialize()가 비슷하다고 생각하면 될 것 같다. 
+
+step 5: evolve the model
+model1 = initialize # 객체가 생성되었다. 사전에 설정한 초기값에 따라 생성
+이렇게 생성된 모델을 3번(step) 실행하고 싶다고 하자. 
+step!(model1, 에이전트 스텝, 모델 스텝, 3)
+이렇게 구체적으로 몇 번 실행할 것인지 정하지 않고 특정한 조건을 충족할 때까지 실행시킬 수도 있다. 
+예를 들어 에이전트 중 mood가 true(즉 행복한 경우)인 에이전트의 비율이 90%를 초과할 때까지 실행하게 만들어 보자. 
+
+function happy90(model, s)   #happy90은 사용자 정의 함수 이름, model은 인스턴스, s는 스텝번호이지만 여기서는 활용되지 않음
+    ratio = count(a -> a.mood, allagents(model)) / nagents(model)
+    return ratio ≥ 0.9
+end
+step!(model1, 에이전트 스텝, 모델 스텝, happy90) #멈춤 조건happy90을 그대로 step!()에 넣어야 한다. 
+스텝이 아니라 시간을 기준으로 조건을 만들 수도 있다. 
+step!은 데이터를 스스로 수집하지 않는다. 통계나 궤적을 모으고 싶다면 run!을 이용해야 한다. (step 7: data collection 참고)
+
+step 6: visualization 
+다음 패키지를 설치
+import Pkg
+Pkg.add("CairoMakie")
+모듈 시행
+using CairoMakie
+
+abmplot
+abmplot은 에이전트 기반 모델(ABM)의 현재 상태를 시각적으로 보여주는 함수입니다.
+Agents.jl과 Makie.jl(혹은 CairoMakie 등)을 이용해 에이전트 위치, 속성, 모양 등을 그림으로 그립니다. 
+색상과 마커 모양을 지정하기 위해 groupcolor, groupmarker를 사용
+agent.group의 속성 값이 1일 때 색은 파랑, 모양은 원으로 하고 싶고 1이 아니면 오렌지와 사각형으로 하고 싶다고 하자. 
+groupcolor(a) = a.group == 1 ? :blue : :orange  #조건이 true면 ?와 : 사이의 값을 반환하고 아니면 :뒤의 값을 반환
+groupmarker(a) = a.group == 1 ? :circle : :rect
+이제 abmplot을 이용하자.
+figure,_ = abmplot(model1; agent_color = groupcolor, agent_marker = groupmarker, agent_size = 10)
+(참고: 여기서 figure,_ =...처럼 하는 것은 abmplot이 두 개의 리턴값(플롯과 ABM Observable)을 가지기 때문이다. 각각의 리턴값을 이용하기 위해 figure, abmobs = ....처럼 하는 것이 원칙이지만 여기서는 ABMObservable을 이용하지 않기 때문에 figure,_=...처럼 한 것이다.)
+
+figure   # returning the figure displays it
+
+
+
+abmvideo
+abmvideo는 Agents.jl에서 제공하는, 에이전트 기반 모델(ABM)의 시뮬레이션 과정을 동영상으로 저장하는 함수입니다.
+abmplot이 "한 시점의 그림"을 만드는 함수라면, abmvideo는 "시간 변화에 따른 여러 장면을 모아 영상"을 만듭니다.
+
+기본 형식은 다음과 같다.
+abmvideo(“파일이름”, 인스턴스; 에이전트색, 에이전트마커, 프레임진행 전 스텝 반복 횟수, 초당 프레임, 총 프레임, 이름)
+예시
+model1 = initialize()
+groupcolor(a) = a.group == 1 ? :blue : :orange 
+groupmarker(a) = a.group == 1 ? :circle : :rect
+abmvideo(
+    "model1.mp4", model1;
+    agent_color = groupcolor, agent_marker = groupmarker, as = 10,
+    framerate = 4, frames = 20,
+    title = "Schelling's segregation model"
+)
+
+step 7: data collection
+run!은 step!과 마찬가지로 시뮬레이션을 실행하며 구체적인 스텝의 수를 지정하거나 조건부로 스텝을 진행시킬 수 있다. step!과의 차이점은 지정한 변수를 자동으로 기록하여 데이터를 수집할 수 있다는 것. DataFrame 형태로 수집된 데이터와 모델의 최종형태를 리턴하게 된다. 
+기본적인 형식은 다음과 같다.
+
+adf, mdf = run!(model, agent_step!, model_step!,
+               n = 100,
+               adata = [:wealth, :status],        # 에이전트 데이터
+               mdata = [:temperature, :GDP])   # 모델 데이터
+
+여기서 adata란
+1. adata — agent data (에이전트별 데이터)
+기록 대상: 시뮬레이션 중 각 에이전트의 속성 값
+형태:
+Symbol 배열: 예) [:pos, :wealth]
+→ 각 에이전트의 pos, wealth 필드를 매 스텝마다 저장
+함수 배열: 예) [agent -> agent.wealth / agent.age]
+→ 매 스텝마다 모든 에이전트에 대해 해당 함수 값을 계산해서 저장
+출력 구조:
+반환되는 DataFrame에서 step, id(에이전트 번호), 그리고 지정한 속성/함수의 결과가 들어감
+예시
+adata = [:pos, :mood, :group]
+schelling = initialize()
+adf, mdf = run!(schelling, 5; adata) # run for 5 steps. initialize()에 모델스텝과 에이전트스텝이 포함되어 있기 때문에 생략해도 된다. 
+adf[end-10:end, :]  # display only the last few rows
+
+
+여기서 mdata란
+2. mdata — model data (모델 전체 데이터)
+기록 대상: 모델 객체 전체 수준에서의 속성 값
+형태:
+Symbol 배열: 예) [:temperature, :GDP]
+→ 모델의 필드 temperature, GDP 값을 매 스텝마다 저장
+함수 배열: 예) [model -> nagents(model)]
+→ 매 스텝마다 함수 결과 저장 (예: 현재 에이전트 수)
+출력 구조:
+반환되는 DataFrame에서 step과 지정한 속성/함수 결과가 열로 들어감
+
+
+종료 
+exit()
+
+
+확장 주제:
+1. 확률분포, 확률변수 이용
+using Pkg
+Pkg.add("Distributions")
+using Distributions
+
+다음처럼 분포를 정의하자.
+d1 = Normal(0, 1)     # 평균 0, 표준편차 1인 정규분포
+d2 = Beta(2, 5)        # α=2, β=5인 베타분포
+d3 = Exponential(3.0)  # λ=3인 지수분포
+다음처럼 난수를 샘플링 할 수 있다.
+rand(d1)       # 정규분포에서 1개 샘플
+rand(d1, 5)    # 5개 샘플
+rand(d2, 1000) # 1000개 샘플
+이때 시드를 사용해야 재현성을 확보할 수 있다. 
+
+
+
+2 통계
+using Statistics
+mean(x):평균. ex) mean([1,2,3]), mean(x^2 for x in 1:3), mean(df.a) 즉 df라는 데이터프레임의 a 열의 평균을 구하는 것 
+median(x):중앙값
+var(x):분산
+std(x):표준편차
+cov(x,y):공분산 및 공분산 행렬. ex) cov([1,2,3], [2,3,4])
+cor(x,y): 상관계수 및 상관계수 행렬
+
+회귀분석 등 계량적인 분석을 하고 싶다면
+using GLM, Econometrics
+GLM의 장점은 공식 통계 패키지이기 때문에 안정적이고 많이 사용되며 R과 유사한 문법을 가지고 있다. DataFrames 등과 호환성이 높다. 단점은 경제 특화 기능이 부족하며 HAC 등 표준오차 조정 기능이 부족.
+Econometrics의 장점은 Stata, R과 비슷하다는 것, 계량경제학 특화 기능이 있다는 것(2SLS, HAC, 패널데이터 이용가능 등). 단점은 패키지 호환성이 약하고 로지스틱, 포아송 등의 분포에 약함. 어느 한 가지를 선택하기보다는 필요에 따라 병행.
+
+3. Monte Carlo(MC) run
+일단 초기화함수(initialize)와 병렬 처리(스레드, thread. 반복 작업을 빠르게 수행할 수 있게 한다.)
+
+using Agents, Random, Statistics, DataFrames, Base.Threads
+
+(A) 스레드별 RNG 준비(스레드마다 RNG를 따로 준비해야 섞이지 않는다)
+예)
+function make_thread_rngs(; seed::Int=20250818) #‘;’은 인자를 나타내며 make_thread_rng(seed=123)처럼 사용해야 한다. 20250818은 인자를 따로 설정하지 않았을 때 초기값
+    base = Xoshiro(seed)
+    rngs = [copy(base) for _ in 1:nthreads()]
+    #[]은 Array 자료형. copy()는 객체를 복사하여 독립적인 객체를 만들게 한다. 이렇게 만들어진 객체는 수정하       더라도 원래 객체에 영향을 주지 않는다. nthreads()는 간단히 내가 지금 몇 개의 병렬처리를 할 수 있는지.
+     # 서로 멀리 떨어진 서브스트림을 대충 보장(엄밀히는 jump!(…)을 더 쓰세요)
+    for t in 2:nthreads()
+        rand!(rngs[t-1], zeros(1024))  
+        # 상태 크게 전진. 이 과정이 있어야 스레드가 서로 다른 rng를 가지게 된다. 
+        rngs[t] = copy(rngs[t-1])
+    end
+    return rngs
+end
+
+jump!를 쓰는 경우
+using Random
+
+function make_thread_rngs_jump(; seed::Int=20250818)
+    base = Xoshiro(seed)                     
+    rngs = [copy(base) for _ in 1:nthreads()] 
+    
+    # thread 2부터는 이전 RNG에서 점프
+    for t in 2:nthreads()
+        rngs[t] = copy(rngs[t-1])   # 먼저 복사
+        jump!(rngs[t])              # 상태를 큰 폭으로 전진
+    end
+    
+    return rngs
+end
+
+몬테 카를로는 모델의 한 번 실행(시뮬레이션 1회)을 여러 번 반복해야 한다. 이것을 간단하게 하기 위해 run_once()같은 사용자 정의 함수를 정의해야 한다. 
+(B) "한 번 실행" — 모형 초기화, run!, 데이터 수집을 한 번에
+function run_once(
+    rng;
+    init,
+    agent_step!,
+    model_step! = (model)->nothing,
+    steps::Int,
+    adata::Vector{Symbol},
+    mdata::Function,
+)
+    model = init(rng)  # 사용자 초기화 함수로 ABM 생성. 즉 이미 모델을 정의한 상황
+
+    adf_raw, mdf_raw = run!(model, steps;
+                            agent_step!, model_step!,
+                            adata = adata, mdata = mdata)
+
+    # 반드시 수집하는 전제이므로 방어적으로 체크
+    adf = adf_raw === nothing ? error("adata가 수집되지 않았습니다. adata를 확인하세요.") : DataFrame(adf_raw)
+    mdf = mdf_raw === nothing ? error("mdata가 수집되지 않았습니다. mdata를 확인하세요.") : DataFrame(mdf_raw)
+
+    return (adf, mdf)
+end
+
+(C) 몬테카를로 반복 실행기 — 결과를 vcat 하며 :trial 태그를 추가
+function mc_repeat(
+    trials::Int;  #반복 횟수
+    seed::Int = 20250818,
+    init,
+    agent_step!,
+    model_step! = (model)->nothing,
+    steps::Int,
+    adata::Vector{Symbol},
+    mdata::Function,
+)
+    rngs = make_thread_rngs_jump(seed=seed)
+    adfs = Vector{DataFrame}(undef, trials)
+    mdfs = Vector{DataFrame}(undef, trials)
+
+    @threads for i in 1:trials  #nthreads()만큼 병렬 실행
+        rng = rngs[threadid()]
+        rand(rng)  # (선택) 반복 간 RNG 상태 전진
+
+        adf, mdf = run_once(rng;
+            init = init,
+            agent_step! = agent_step!,
+            model_step! = model_step!,
+            steps = steps,
+            adata = adata,
+            mdata = mdata
+        )
+
+        adf[!, :trial] = I  #어떤 반복에서 나온 행인지 알려주는 열을 추가
+        mdf[!, :trial] = i
+        adfs[i] = adf
+        mdfs[i] = mdf
+    end
+
+    adata_all = vcat(adfs..., cols = :union)
+    mdata_all = vcat(mdfs..., cols = :union)
+    return (adata_all, mdata_all) #최종적으로 두 데이터프레임을 반환
+end
+
+4. 데이터 저장
+CSV 파일로 저장한다고 하자. 
+using CSV, DataFrames
+내가 몬테 카를로, 시뮬레이션을 돌려서 얻은 데이터 프레임 adata_all, mdata_all을 저장하고 싶다고 하자.
+
+mkpath("results")  # "results"라는 폴더가 없으면 새로 생성
+CSV.write("results/adata_all.csv", adata_all)  # DataFrame → CSV 저장
+CSV.write("results/mdata_all.csv", mdata_all)
+
+
+
+
+최종적으로 다음처럼 진행하면 된다.
+패키지 로드-> 공간, 에이전트 타입 설계-> 에이전트, 모델 스텝 함수 정의-> standardABM 등으로 모델을 만든다. initialize를 이용해 초기화 함수를 만들 때 앞에서 만든 모델을 주입-> 수집할 데이터 adata, mdata 정의-> 1회 실행 및 데이터 수집-> 1회 시행을 시각화 abmplot, abmvideo 등-> 몬테 카를로 과정(run_once, mc_repeat)-> 데이터 저장
+
+
+
+Appendix
+
+1. 자료형 정리
+✅ 1. 숫자형 (Numeric types)
+
+자료형
+설명
+예시 
+특징
+Int64
+64비트 정수
+1, -5
+
+Float64
+64비트 부동소수점
+3.14, 1e-5
+
+Float32
+32비트 부동소수점
+Float32(3.14)
+메모리 적지만 정밀도 낮음
+BigInt
+임의 정밀도 정수
+big(1234567890123)
+정확한 큰 수 계산
+BigFloat	
+임의 정밀도 실수
+BigFloat("0.1")
+고정밀 수치 연산
+Complex{T}
+복소수
+3 + 4im	
+실수형 T 기반 복소수
+
+		
+✅ 2. 논리형 (Boolean)
+자료형	설명	예시
+Bool	참/거짓	true, false
+true는 내부적으로 1, false는 0으로 처리됨
+조건문에서 필수
+
+✅ 3. 문자 및 문자열
+자료형	설명	예시	특징
+String	문자열	"hello"	큰따옴표 " " 사용, UTF-8 지원
+
+✅ 4. 컬렉션형 (Container types)
+
+자료형
+설명
+예시
+특징
+Vector{T} (Array{T,1})
+1차원 배열
+[1,2,3]
+크기 변경 가능
+Matrix{T} (Array{T,2})
+2차원 배열
+[1 2; 3 4]
+수학 행렬 표현
+Array{T,N}
+N차원 배열
+zeros(3,3,3)
+N ≥ 1
+Tuple
+순서 있고 불변
+(1, "a", true)
+타입 혼합 가능
+NamedTuple
+키가 있는 튜플
+(a=1, b="hi")
+구조화된 반환값
+Dict{K,V}
+키-값 쌍 저장
+Dict(:a => 1)
+해시 기반, 키 중복 불가
+Set{T}
+중복 없는 집합
+Set([1,2,3])
+순서 없음
+
+행렬 만들기
+A = [1 2 3; 4 5 6; 7 8 9]   # 3×3 행렬
+즉 A = [1행; 2행; 3행]
+공백은 열(column) 구분
+세미콜론 ; 은 행(row) 구분
+
+출력:
+3×3 Matrix{Int64}:
+ 1  2  3
+ 4  5  6
+ 7  8  9
+		
+데이터프레임 만들기
+using DataFrames	
+df = DataFrame(
+    name = ["Alice", "Bob", "Charlie"],
+    age = [25, 30, 35],
+    salary = [50000, 60000, 70000]
+)
+name, age, salary가 이름인 열이 각각 만들어진다. 
+출력
+3×3 DataFrame
+ Row│ name     age   salary
+     │ String    Int64  Int64
+───|──────────────
+   1 │ Alice      25   50000
+   2 │ Bob       30   60000
+   3 │ Charlie    35   70000
+
+	
+			
+✅ 5. 기타 중요한 타입
+
+자료형
+설명
+예시
+Nothing
+"없음", null에 해당
+nothing
+Missing
+통계적 결측값
+missing
+Any
+모든 타입의 상위 타입
+x::Any
+Union{T1, T2}
+여러 타입 중 하나
+Union{Int, Missing}
+Function
+함수 타입
+f(x) = x^2
+Type{T}
+타입 자체의 타입
+typeof(Int) = DataType
+
+
+	
+	

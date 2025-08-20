@@ -59,7 +59,7 @@ nLFLperiods = 10;                       % Liftoff in period 11 case
 
 %% SET CALIBRATION OF PROBABILITY MAPPING FUNCTION FOR MAIN & SENSITIVITY
 alfa1 = 0.075;
-alfa2 = 2
+alfa2 = 2;
 if doSensitivityAnalysis
     alfa1HighCred = alfa1;
     alfa2HighCred = 3;

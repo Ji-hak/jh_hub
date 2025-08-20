@@ -33,7 +33,7 @@ saveTeXfigures = true;
 useSlideFormat = false; %#ok<NASGU> % (미사용)
 
 %% SPECIFY PLOT HORIZON
-plotHorizon = 14;
+plotHorizon = 15;
 
 %% DEFINE TEX FIGURES DIRECTORY
 thisDir       = fileparts(mfilename('fullpath'));   % 현재 파일 위치

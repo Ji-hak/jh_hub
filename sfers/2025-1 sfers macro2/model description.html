@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.33">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>model-description</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="model description_files/libs/clipboard/clipboard.min.js"></script>
+<script src="model description_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="model description_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="model description_files/libs/quarto-html/popper.min.js"></script>
+<script src="model description_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="model description_files/libs/quarto-html/anchor.min.js"></script>
+<link href="model description_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="model description_files/libs/quarto-html/quarto-syntax-highlighting-ea385d0e468b0dd5ea5bf0780b1290d9.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="model description_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="model description_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="model description_files/libs/bootstrap/bootstrap-bb462d781dde1847d9e3ccf7736099dd.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+
+
+
+<section id="modified-bgg-1999-dsge-model-full-walkthrough-ver1" class="level1">
+<h1>Modified BGG (1999) DSGE Model — Full Walkthrough (ver1)</h1>
+<p><strong>Author of this file:</strong> macro2<br>
+<strong>Short description:</strong> A Bernanke–Gertler–Gilchrist (1999)-style New Keynesian model with a financial accelerator. The monetary policy rule <em>does not</em> include an explicit financial-stability term in this version.<br>
+<strong>Audience:</strong> Senior undergraduate economics students; assumes core macro and basic dynamic optimization. We explain log-linearization and timing operators carefully.</p>
+<hr>
+<section id="what-this-model-is-and-is-not" class="level2">
+<h2 class="anchored" data-anchor-id="what-this-model-is-and-is-not">0) What this model is (and is not)</h2>
+<p>This is a medium-scale New Keynesian (NK) model enriched with a <strong>financial accelerator</strong> à la <strong>BGG (1999)</strong>. The model combines sticky prices (Phillips curve), intertemporal consumption smoothing (Euler), investment with adjustment costs, and an <strong>entrepreneurial balance-sheet channel</strong> that makes the external finance premium (the <strong>risk spread</strong>) move with <strong>leverage</strong>/<strong>net worth</strong>. Monetary policy sets the <strong>nominal policy rate</strong> via a <strong>Taylor-type rule</strong> with smoothing; the <strong>real rate</strong> follows from the <strong>Fisher relation</strong>. In this <em>ver1</em>, the rule <strong>does not</strong> include a financial-stability term (e.g., leverage, credit growth).</p>
+<p>Compared to the textbook BGG setup, your file keeps the essence but uses a compact, log-linear representation with explicit <strong>measurement equations</strong> for annualized observables, and a simple reduced-form mapping for the <strong>spread</strong> and <strong>net-worth dynamics</strong> that matches the original economic logic.</p>
+<hr>
+</section>
+<section id="variables-notation" class="level2">
+<h2 class="anchored" data-anchor-id="variables-notation">1) Variables &amp; Notation</h2>
+<section id="time-indexing-operators" class="level3">
+<h3 class="anchored" data-anchor-id="time-indexing-operators">1.1 Time indexing &amp; operators</h3>
+<ul>
+<li>Curly braces denote time: <code>x{t-1}</code>, <code>x{t}</code>, <code>x{t+1}</code>.</li>
+<li>All model equations are <strong>linearized around the steady state</strong>. Unless stated otherwise, a variable is a <strong>(log) deviation from steady state</strong> (for real quantities and prices) or a <strong>deviation in percent/pp</strong> for rates.</li>
+<li>We use ( _t ) for inflation (your mnemonic <code>pie</code>) and ( rn_t ) for the <strong>ex-ante nominal policy rate</strong>. The <strong>ex-ante real rate</strong> is ( r_t ).</li>
+<li><strong>Annualization</strong> (measurement block) multiplies quarterly rates by 4.</li>
+</ul>
+</section>
+<section id="endogenous-statecontrol-variables" class="level3">
+<h3 class="anchored" data-anchor-id="endogenous-statecontrol-variables">1.2 Endogenous state/control variables</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 58%">
+<col style="width: 30%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Mnemonic</th>
+<th>Meaning (linearized)</th>
+<th>Units / interpretation</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>y</code></td>
+<td>Output gap</td>
+<td>log-deviation</td>
+</tr>
+<tr class="even">
+<td><code>pie</code></td>
+<td>Inflation ( _t ) (quarterly)</td>
+<td>percent / pp</td>
+</tr>
+<tr class="odd">
+<td><code>r</code></td>
+<td>Ex-ante <strong>real</strong> interest rate</td>
+<td>percent / pp</td>
+</tr>
+<tr class="even">
+<td><code>rn</code></td>
+<td><strong>Nominal</strong> policy rate (quarterly)</td>
+<td>percent / pp</td>
+</tr>
+<tr class="odd">
+<td><code>n</code></td>
+<td>Entrepreneurial <strong>net worth</strong></td>
+<td>log-deviation</td>
+</tr>
+<tr class="even">
+<td><code>a</code></td>
+<td>Productivity</td>
+<td>log-deviation</td>
+</tr>
+<tr class="odd">
+<td><code>c</code></td>
+<td>Consumption</td>
+<td>log-deviation</td>
+</tr>
+<tr class="even">
+<td><code>ce</code></td>
+<td>Entrepreneur consumption</td>
+<td>log-deviation</td>
+</tr>
+<tr class="odd">
+<td><code>rk</code></td>
+<td><strong>Return to capital premium</strong> / risk spread</td>
+<td>percent / pp</td>
+</tr>
+<tr class="even">
+<td><code>q</code></td>
+<td>Price of capital (Tobin’s Q)</td>
+<td>log-deviation</td>
+</tr>
+<tr class="odd">
+<td><code>k</code></td>
+<td>Capital</td>
+<td>log-deviation</td>
+</tr>
+<tr class="even">
+<td><code>x</code></td>
+<td>Price markup / real marginal cost gap</td>
+<td>log-deviation</td>
+</tr>
+<tr class="odd">
+<td><code>h</code></td>
+<td>Hours / labor</td>
+<td>log-deviation</td>
+</tr>
+<tr class="even">
+<td><code>lev</code></td>
+<td>Leverage ( q + k - n )</td>
+<td>log-deviation</td>
+</tr>
+<tr class="odd">
+<td><code>g</code></td>
+<td>Government spending</td>
+<td>log-deviation</td>
+</tr>
+<tr class="even">
+<td><code>i</code></td>
+<td>Investment</td>
+<td>log-deviation</td>
+</tr>
+<tr class="odd">
+<td><code>nr</code></td>
+<td>Natural real rate</td>
+<td>percent / pp</td>
+</tr>
+<tr class="even">
+<td><code>z</code></td>
+<td>Preference shock process</td>
+<td>log-deviation</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="observables-measurement-variables" class="level3">
+<h3 class="anchored" data-anchor-id="observables-measurement-variables">1.3 Observables (measurement variables)</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 89%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Mnemonic</th>
+<th>Definition</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>rAnn</code></td>
+<td>Annualized nominal policy rate: ( rAnn_t = rAnnSS + 4 rn_t )</td>
+</tr>
+<tr class="even">
+<td><code>piAnn</code></td>
+<td>Annualized inflation: ( piAnn_t = 4 pie_t )</td>
+</tr>
+<tr class="odd">
+<td><code>rnAnn</code></td>
+<td>Annualized natural rate: ( rnAnn_t = rAnnSS + 4 nr_t )</td>
+</tr>
+</tbody>
+</table>
+<p><code>rAnnSS = 100 \cdot ((1/\beta)^4 - 1)</code> is the steady-state <strong>annual</strong> nominal rate implied by discount factor ( ).</p>
+</section>
+<section id="exogenous-shocks" class="level3">
+<h3 class="anchored" data-anchor-id="exogenous-shocks">1.4 Exogenous shocks</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 10%">
+<col style="width: 69%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Shock</th>
+<th>Mnemonic</th>
+<th>Law of motion</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Productivity</td>
+<td><code>ea</code></td>
+<td>( a*t = _a a*{t-1} + s_a, ea_t )</td>
+</tr>
+<tr class="even">
+<td>Policy shock</td>
+<td><code>etamp</code></td>
+<td>Enters Taylor rule for ( rn_t )</td>
+</tr>
+<tr class="odd">
+<td>Net-worth shock</td>
+<td><code>en</code></td>
+<td>Enters net-worth law of motion</td>
+</tr>
+<tr class="even">
+<td>Govt spending</td>
+<td><code>eg</code></td>
+<td>( g*t = _g g*{t-1} + s_g, eg_t )</td>
+</tr>
+<tr class="odd">
+<td>Natural rate</td>
+<td><code>etarn</code></td>
+<td>( nr_t = (1-_a)a_t + (1-_z)z_t + etarn_t )</td>
+</tr>
+</tbody>
+</table>
+<p>Preference shock process: ( z*t = _z z*{t-1} ).</p>
+<hr>
+</section>
+</section>
+<section id="model-blocks-big-picture" class="level2">
+<h2 class="anchored" data-anchor-id="model-blocks-big-picture">2) Model blocks (big picture)</h2>
+<p>We organize the model into <strong>four blocks</strong>. Each block is internally coherent and the blocks interact to determine equilibrium dynamics.</p>
+<section id="a-household-demand-block" class="level3">
+<h3 class="anchored" data-anchor-id="a-household-demand-block">(A) Household &amp; Demand block</h3>
+<ul>
+<li><strong>Euler</strong>: ( c<em>t = -(rn_t - _t - nr_t) + c</em>{t+1} ).<br>
+<em>Intuition</em>: Higher ex-ante real rate ( rn_t - _t ) (relative to the natural rate ( nr_t )) depresses current consumption; expected future consumption raises current consumption.</li>
+<li><strong>Resource constraint</strong>: ( y_t = c_y c_t + i_y i_t + g_y g_t + ce_y ce_t ). Output is the share-weighted sum of components.</li>
+<li><strong>Government spending</strong> follows AR(1).</li>
+</ul>
+</section>
+<section id="b-supply-price-setting-block" class="level3">
+<h3 class="anchored" data-anchor-id="b-supply-price-setting-block">(B) Supply &amp; Price-setting block</h3>
+<ul>
+<li><strong>Production</strong>: ( y<em>t = a_t + k</em>{t-1} + (1-)h<em>t ).<br>
+</em>Intuition<em>: Cobb–Douglas in (effective) labor ( h_t ) and capital ( k</em>{t-1} ).</li>
+<li><strong>Labor FOC</strong>: ( y_t = x_t + c_t + (1+)h_t ). Links hours, consumption (wealth effect), and the markup ( x_t ).</li>
+<li><strong>Phillips curve (NKPC)</strong>: ( <em>t = -x_t + , </em>{t+1} ).<br>
+<em>Intuition</em>: Current inflation rises with expected future inflation and falls with the <strong>price gap</strong> ( x_t ) being closed (price adjustment pressure).</li>
+</ul>
+</section>
+<section id="c-capital-investment-block" class="level3">
+<h3 class="anchored" data-anchor-id="c-capital-investment-block">(C) Capital &amp; Investment block</h3>
+<ul>
+<li><strong>Q equation</strong>: ( q<em>t = (i_t - k</em>{t-1}) ). Investment adjustment costs make ( q_t ) co-move with marginal installation costs.</li>
+<li><strong>Capital accumulation</strong>: ( k<em>t = i_t + (1-)k</em>{t-1} ).</li>
+</ul>
+</section>
+<section id="d-financial-accelerator-policy-block" class="level3">
+<h3 class="anchored" data-anchor-id="d-financial-accelerator-policy-block">(D) Financial accelerator &amp; Policy block</h3>
+<ul>
+<li><strong>Return to capital (gross)</strong>:<br>
+( rk<em>t = (1-)(y_t - k</em>{t-1} - x<em>t) + q_t - q</em>{t-1} ).<br>
+This is a reduced-form log-linearization: returns rise with marginal product of capital and capital gains ( q<em>t - q</em>{t-1} ).</li>
+<li><strong>Spread / premium mapping</strong>:<br>
+( rk<em>{t+1} = r_t - (n_t - q_t - k_t) ).<br>
+Since ( lev_t = q_t + k_t - n_t ), this is ( rk</em>{t+1} = r_t + , lev_t ): <strong>higher leverage ⇒ bigger premium</strong>.</li>
+<li><strong>Net worth dynamics</strong>:<br>
+( n<em>t = ,RRks,(rk_t - r</em>{t-1}) + r<em>{t-1} + n</em>{t-1} + en<em>t ).<br>
+Net worth grows with the _excess</em> return on capital, carries over past net worth, and is buffeted by <code>en_t</code>.</li>
+<li><strong>Monetary policy (Taylor with smoothing)</strong>:<br>
+( rn<em>t = , rn</em>{t-1} + , <em>{t-1} + s</em>{rn}, etamp_t ).</li>
+<li><strong>Fisher relation</strong>: ( rn<em>t = r_t + </em>{t+1} ). ⇒ ( r*t = rn_t - _t[*{t+1}] ).</li>
+</ul>
+<p>These blocks close the model with the shock processes above and the measurement equations for observables.</p>
+<hr>
+</section>
+</section>
+<section id="log-linearization-timing-quick-tutorial" class="level2">
+<h2 class="anchored" data-anchor-id="log-linearization-timing-quick-tutorial">3) Log-linearization &amp; timing — quick tutorial</h2>
+<ul>
+<li><strong>Log-linearization</strong>: For a level variable ( X<em>t ) with steady state ( X ), define ( x_t X_t - X ). For a gross rate ( R_t ) near ( R ), write ( r_t (R_t-R) ) in percentage points. Your file uses the _linearized</em> forms directly (no bars shown).</li>
+<li><strong>Timing</strong>: ( k<em>{t-1} ) is predetermined (installed last period). ( q_t ) is the shadow value of capital <strong>at t</strong>. In the spread equation, ( rk</em>{t+1} ) on the LHS and ( r<em>t ) on the RHS reflect that the _entrepreneur chooses at t</em> the portfolio that pays at ( t+1 ); the relevant safe rate is known at t (subject to policy rule and expectations).</li>
+</ul>
+<hr>
+</section>
+<section id="equation-by-equation-intuition-math-detail" class="level2">
+<h2 class="anchored" data-anchor-id="equation-by-equation-intuition-math-detail">4) Equation-by-equation (intuition + math detail)</h2>
+<p>We restate each equation as in your file and unpack its meaning and derivation sketch.</p>
+<section id="resource-constraint" class="level3">
+<h3 class="anchored" data-anchor-id="resource-constraint">4.1 Resource constraint</h3>
+<p><strong>File:</strong> ( y_t = c_y c_t + i_y i_t + g_y g_t + ce_y ce_t ).<br>
+<strong>Meaning:</strong> Output gap is the share-weighted sum of (log) gaps in components. The weights ( c_y, i_y, g_y, ce_y ) are steady-state shares that sum to ~1. Linearization of ( Y = C+I+G+CE ) around the steady state yields the combination above.</p>
+</section>
+<section id="euler-equation-consumption" class="level3">
+<h3 class="anchored" data-anchor-id="euler-equation-consumption">4.2 Euler equation (consumption)</h3>
+<p><strong>File:</strong> ( c<em>t = -(rn_t - _t - nr_t) + c</em>{t+1} ).<br>
+<strong>Meaning:</strong> Standard NK Euler in deviation form: higher <strong>ex-ante real rate</strong> relative to the <strong>natural</strong> real rate depresses ( c_t ). The ( nr_t ) term recovers the efficient benchmark (what consumption growth would be under flexible prices/optimal policy), so ( c_t ) is the gap from that natural benchmark.</p>
+</section>
+<section id="entrepreneur-consumption" class="level3">
+<h3 class="anchored" data-anchor-id="entrepreneur-consumption">4.3 Entrepreneur consumption</h3>
+<p><strong>File:</strong> ( ce_t = n_t ).<br>
+<strong>Meaning:</strong> In BGG, entrepreneurs consume out of net worth (up to survival). Linearization gives a tight link between ( ce_t ) and ( n_t ). It also ensures entrepreneurial consumption is procyclical when balance sheets strengthen.</p>
+</section>
+<section id="risk-spread-mapping" class="level3">
+<h3 class="anchored" data-anchor-id="risk-spread-mapping">4.4 Risk spread mapping</h3>
+<p><strong>File:</strong> ( rk_{t+1} = r_t - ,(n_t - q_t - k_t) r_t + ,lev_t ).<br>
+<strong>Meaning:</strong> External finance premium increases with <strong>leverage</strong>. If net worth ( n_t ) falls relative to asset value ( q_t + k_t ), leverage rises and so must the premium to entice lenders (moral hazard/monitoring à la BGG). Coefficient ( &gt; 0 ) is the local elasticity.</p>
+</section>
+<section id="return-to-capital" class="level3">
+<h3 class="anchored" data-anchor-id="return-to-capital">4.5 Return to capital</h3>
+<p><strong>File:</strong> ( rk<em>t = (1-)(y_t - k</em>{t-1} - x<em>t) + q_t - q</em>{t-1} ).<br>
+<strong>Meaning:</strong> A reduced-form return combining marginal product (roughly ( y - k ) net of markups) and capital gains on ( q ). Parameter ( (0,1) ) splits cash-flow vs.&nbsp;valuation components.</p>
+</section>
+<section id="price-of-capital-tobins-q" class="level3">
+<h3 class="anchored" data-anchor-id="price-of-capital-tobins-q">4.6 Price of capital (Tobin’s Q)</h3>
+<p><strong>File:</strong> ( q<em>t = ,(i_t - k</em>{t-1}) ).<br>
+<strong>Meaning:</strong> With quadratic adjustment costs, marginal installation cost moves with investment relative to existing capital. Higher ( i_t ) pushes up ( q_t ).</p>
+</section>
+<section id="production-technology" class="level3">
+<h3 class="anchored" data-anchor-id="production-technology">4.7 Production technology</h3>
+<p><strong>File:</strong> ( y<em>t = a_t + k</em>{t-1} + (1-)h_t ).<br>
+<strong>Meaning:</strong> Cobb–Douglas with effective labor ( h_t ). Linearization of ( y = a + k + (1-) h ) plus labor efficiency factor ( ).</p>
+</section>
+<section id="labor-foc" class="level3">
+<h3 class="anchored" data-anchor-id="labor-foc">4.8 Labor FOC</h3>
+<p><strong>File:</strong> ( y_t = x_t + c_t + (1+)h_t ).<br>
+<strong>Meaning:</strong> Equates (log) marginal product of labor to real wage adjusted for markup and consumption (wealth effect). The Frisch elasticity ( 1/) governs hours’ sensitivity.</p>
+</section>
+<section id="phillips-curve" class="level3">
+<h3 class="anchored" data-anchor-id="phillips-curve">4.9 Phillips curve</h3>
+<p><strong>File:</strong> ( <em>t = -x_t + </em>{t+1} ).<br>
+<strong>Meaning:</strong> Sticky prices with Calvo-type friction: current inflation rises with expected future inflation and falls as the markup gap is closed. ( ) collects structural parameters (Calvo probability, elasticity of substitution, etc.).</p>
+</section>
+<section id="capital-accumulation" class="level3">
+<h3 class="anchored" data-anchor-id="capital-accumulation">4.10 Capital accumulation</h3>
+<p><strong>File:</strong> ( k<em>t = i_t + (1-)k</em>{t-1} ).<br>
+<strong>Meaning:</strong> Linearization of ( K<em>t = (1-)K</em>{t-1} + I_t ) under log deviations with the share ( ) scaling the mapping from investment to capital growth (a standard linearization shortcut).</p>
+</section>
+<section id="net-worth-law-of-motion" class="level3">
+<h3 class="anchored" data-anchor-id="net-worth-law-of-motion">4.11 Net worth law of motion</h3>
+<p><strong>File:</strong> ( n<em>t = ,RRks,(rk_t - r</em>{t-1}) + r<em>{t-1} + n</em>{t-1} + en<em>t ).<br>
+<strong>Meaning:</strong> Entrepreneurs survive with probability (or retention) ( ); net worth accumulates with the <strong>excess</strong> return ( (rk_t - r</em>{t-1}) ) on the installed capital and earns the safe rate on retained wealth; shock <code>en_t</code> perturbs balance sheets directly. This condenses the BGG cross-sectional contract outcome into a tractable linear process.</p>
+</section>
+<section id="monetary-policy-rule-no-fs-term" class="level3">
+<h3 class="anchored" data-anchor-id="monetary-policy-rule-no-fs-term">4.12 Monetary policy rule (no FS term)</h3>
+<p><strong>File:</strong> ( rn<em>t = rn</em>{t-1} + <em>{t-1} + s</em>{rn} etamp_t ).<br>
+<strong>Meaning:</strong> Smoothing (( )) plus lagged inflation response (( )). No explicit response to credit/leverage in this version.</p>
+</section>
+<section id="fisher-relation" class="level3">
+<h3 class="anchored" data-anchor-id="fisher-relation">4.13 Fisher relation</h3>
+<p><strong>File:</strong> ( rn<em>t = r_t + </em>{t+1} ).<br>
+<strong>Meaning:</strong> Definition of the ex-ante real rate. Combined with the rule it implies ( r<em>t = rn</em>{t-1} + <em>{t-1} + s</em>{rn} etamp*t - _t[*{t+1}] ).</p>
+</section>
+<section id="shock-processes" class="level3">
+<h3 class="anchored" data-anchor-id="shock-processes">4.14 Shock processes</h3>
+<p><strong>File:</strong><br>
+( a*t = _a a<em>{t-1} + s</em>a ea_t ), ( g_t = _g g<em>{t-1} + s</em>g eg_t ), ( z_t = _z z*{t-1} ),<br>
+( nr_t = (1-_a) a_t + (1-_z) z_t + etarn_t ).<br>
+<strong>Meaning:</strong> Stationary AR(1) drivers and a natural-rate index tied to productivity/preferences plus an iid shock.</p>
+</section>
+<section id="measurement-equations" class="level3">
+<h3 class="anchored" data-anchor-id="measurement-equations">4.15 Measurement equations</h3>
+<p><strong>File:</strong> ( rAnn_t = rAnnSS + 4 rn_t ), ( piAnn_t = 4 pie_t ), ( rnAnn_t = rAnnSS + 4 nr_t ).<br>
+<strong>Meaning:</strong> Map quarterly model objects to annualized observables. ( rAnnSS = 100((1/)^4-1) ).</p>
+<hr>
+</section>
+</section>
+<section id="calibration-economic-roles-of-parameters" class="level2">
+<h2 class="anchored" data-anchor-id="calibration-economic-roles-of-parameters">5) Calibration &amp; economic roles of parameters</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 18%">
+<col style="width: 16%">
+<col style="width: 64%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Parameter</th>
+<th style="text-align: right;">Value</th>
+<th>Role / Interpretation</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>( c_y, i_y, g_y, ce_y )</td>
+<td style="text-align: right;">0.51, 0.18, 0.20, 0.12</td>
+<td>Steady-state shares in resource constraint</td>
+</tr>
+<tr class="even">
+<td>( )</td>
+<td style="text-align: right;">0.2</td>
+<td>Elasticity of spread to leverage (financial accelerator strength)</td>
+</tr>
+<tr class="odd">
+<td>( )</td>
+<td style="text-align: right;">0.96</td>
+<td>Weight on capital gains in ( rk_t ) vs cash flows</td>
+</tr>
+<tr class="even">
+<td>( )</td>
+<td style="text-align: right;">0.9</td>
+<td>Policy-rate smoothing</td>
+</tr>
+<tr class="odd">
+<td>( _a, _g )</td>
+<td style="text-align: right;">0.95, 0.95</td>
+<td>Persistence of productivity and government spending</td>
+</tr>
+<tr class="even">
+<td>( )</td>
+<td style="text-align: right;">1.1</td>
+<td>Inflation response in rule (Hawkish if ( &gt;1 ))</td>
+</tr>
+<tr class="odd">
+<td>( )</td>
+<td style="text-align: right;">0.0858</td>
+<td>NKPC slope (higher ⇒ stronger inflation-output tradeoff)</td>
+</tr>
+<tr class="even">
+<td>( )</td>
+<td style="text-align: right;">0.02</td>
+<td>Labor-efficiency weight in production</td>
+</tr>
+<tr class="odd">
+<td>( )</td>
+<td style="text-align: right;">0.33</td>
+<td>Inverse Frisch elasticity (labor supply curvature)</td>
+</tr>
+<tr class="even">
+<td>( )</td>
+<td style="text-align: right;">0.99</td>
+<td>Discount factor ⇒ ( rAnnSS ((1/0.99)^1-1) ) annualized steady rate</td>
+</tr>
+<tr class="odd">
+<td>( )</td>
+<td style="text-align: right;">0.025</td>
+<td>Depreciation (quarterly)</td>
+</tr>
+<tr class="even">
+<td>( )</td>
+<td style="text-align: right;">0.9728</td>
+<td>Entrepreneur survival/retention</td>
+</tr>
+<tr class="odd">
+<td>( RRks )</td>
+<td style="text-align: right;">2.02</td>
+<td>Scaling for the effect of excess return on net worth</td>
+</tr>
+<tr class="even">
+<td>( s<em>a, s_g, s</em>{rn} )</td>
+<td style="text-align: right;">1, 1, 0.0625</td>
+<td>Shock standard deviations (scales in linear law)</td>
+</tr>
+<tr class="odd">
+<td>( )</td>
+<td style="text-align: right;">0.25</td>
+<td>Investment adjustment-cost scaling</td>
+</tr>
+<tr class="even">
+<td>( )</td>
+<td style="text-align: right;">0.35</td>
+<td>Capital share in production</td>
+</tr>
+<tr class="odd">
+<td>( _z )</td>
+<td style="text-align: right;">0.5</td>
+<td>Preference shock persistence</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Comments:</strong></p>
+<ul>
+<li>( ) and ( RRks ) jointly shape the <strong>amplification</strong> and <strong>persistence</strong> of financial cycles. Larger ( ) ⇒ spreads react more to leverage ⇒ stronger accelerator.</li>
+<li>( ) makes <strong>valuation (Q)</strong> movements dominate ( rk_t ); if you want returns driven more by cash flows, reduce ( ).</li>
+<li>( &gt;1 ) helps determinacy (Taylor principle) even with lagged inflation.</li>
+<li>( ) corresponds to ~10% annual depreciation.</li>
+<li>All AR(1) coefficients are &lt;1 ⇒ <strong>stationarity</strong>.</li>
+</ul>
+<hr>
+</section>
+<section id="how-this-differs-from-canonical-bgg-1999" class="level2">
+<h2 class="anchored" data-anchor-id="how-this-differs-from-canonical-bgg-1999">6) How this differs from canonical BGG (1999)</h2>
+<ol type="1">
+<li><p><strong>Spread equation (reduced-form):</strong><br>
+Canonical BGG derives the premium from a costly-state-verification contract. Locally, the premium rises with leverage. Your mapping<br>
+( rk_{t+1} = r_t + ,lev_t )<br>
+is a <strong>parsimonious linear</strong> counterpart capturing the same comparative statics without the full contract algebra.</p></li>
+<li><p><strong>Net worth law of motion:</strong><br>
+BGG has ( N<em>t ) evolving with entrepreneurs’ survival rate and the realized returns on capital vs.&nbsp;the risk-free rate. Your<br>
+( n_t = RRks (rk_t - r</em>{t-1}) + r<em>{t-1} + n</em>{t-1} + en_t )<br>
+collapses these channels into a single linear equation with a shock <code>en_t</code>. It is <strong>consistent in spirit</strong> and works well in a linear solution framework.</p></li>
+<li><p><strong>Monetary policy rule (no FS term):</strong><br>
+Some modern variants (e.g., with macroprudential flavor) include ( lev<em>t ) or credit growth in the rule. Your version <strong>explicitly omits</strong> this, making it a clean benchmark to later test _financial-stability-augmented</em> rules.</p></li>
+<li><p><strong>Return to capital spec:</strong><br>
+Your ( rk_t ) uses a convex combination of cash-flow and valuation components via ( ). Standard BGG focuses on the stochastic return on capital from production/price dynamics; your form is an admissible linearization that is convenient when using a Q-type investment block.</p></li>
+</ol>
+<p><strong>Bottom line:</strong> The economic mechanisms align with BGG. The linear mappings you use are <strong>valid local approximations</strong> and are common in quantitative implementations when one wants tractability and easy estimation/simulation.</p>
+<hr>
+</section>
+<section id="internal-consistency-determinacy-quick-assessment" class="level2">
+<h2 class="anchored" data-anchor-id="internal-consistency-determinacy-quick-assessment">7) Internal consistency &amp; determinacy (quick assessment)</h2>
+<ul>
+<li><strong>Stationarity:</strong> All AR(1) shocks are stationary; capital and net worth dynamics are stable for the stated parameter ranges.</li>
+<li><strong>No redundant equations:</strong> Even though both <strong>Taylor</strong> and <strong>Fisher</strong> include ( rn_t ), Fisher simply <strong>defines</strong> ( r_t ) given ( rn_t ) and inflation expectations—this does <strong>not</strong> overdetermine the system.</li>
+<li><strong>Taylor principle:</strong> With ( &gt;1 ) (albeit on <strong>lagged</strong> inflation) and strong smoothing ( ), determinacy is typically satisfied in NK models. If indeterminacy appears in solution, consider adding a (small) response to <strong>current</strong> or <strong>expected</strong> inflation.</li>
+<li><strong>Financial block:</strong> Signs are economically coherent: higher leverage ( lev<em>t rk</em>{t+1} excess return rises ( n_{t+1} ) improves (after survival), which feeds back by lowering leverage next round (<strong>accelerator</strong> with mean reversion). Magnitudes (( , RRks )) control amplification/persistence.</li>
+</ul>
+<hr>
+</section>
+<section id="full-model-in-compact-linear-state-space-form-conceptual" class="level2">
+<h2 class="anchored" data-anchor-id="full-model-in-compact-linear-state-space-form-conceptual">8) Full model in compact linear state-space form (conceptual)</h2>
+<p>The model solver (e.g., MAPS) will stack endogenous variables into a state vector ( x<em>t ) and write: [ x</em>{t+1} = B,x<em>t + ,, y</em>t = F,x_t, ] with ( y_t ) collecting observables (e.g., ( rAnn_t, piAnn_t, rnAnn_t )), and ( ) the shocks (<code>ea</code>, <code>eg</code>, <code>etamp</code>, <code>en</code>, <code>etarn</code>). Your <code>unpack_model</code> returns these matrices as <code>B</code>, <code>PHI</code>, <code>F</code> for simulation and policy experiments.</p>
+<hr>
+</section>
+<section id="extending-toward-financial-stability-policy-for-later" class="level2">
+<h2 class="anchored" data-anchor-id="extending-toward-financial-stability-policy-for-later">9) Extending toward financial-stability policy (for later)</h2>
+<p>A natural next step is to augment the policy rule: [ rn<em>t = rn</em>{t-1} + <em>{t-1} + </em>{lev},lev<em>t + s</em>{rn} etamp_t, ] or use a macroprudential instrument (e.g., capital requirement or LTV cap) reacting to leverage or credit. This can be tested against your current benchmark to quantify stabilization trade-offs (inflation vs.&nbsp;financial volatility).</p>
+<hr>
+</section>
+<section id="quick-reference-equations-exactly-as-in-the-file" class="level2">
+<h2 class="anchored" data-anchor-id="quick-reference-equations-exactly-as-in-the-file">10) Quick reference — equations exactly as in the file</h2>
+<ul>
+<li><strong>Resource constraint</strong>: ( y_t = c_y c_t + i_y i_t + g_y g_t + ce_y ce_t )</li>
+<li><strong>Euler</strong>: ( c<em>t = -(rn_t - _t - nr_t) + c</em>{t+1} )</li>
+<li><strong>Entrepreneur cons.</strong>: ( ce_t = n_t )</li>
+<li><strong>Spread</strong>: ( rk_{t+1} = r_t - (n_t - q_t - k_t) )</li>
+<li><strong>Return to capital</strong>: ( rk<em>t = (1-)(y_t - k</em>{t-1} - x<em>t) + q_t - q</em>{t-1} )</li>
+<li><strong>Q</strong>: ( q<em>t = (i_t - k</em>{t-1}) )</li>
+<li><strong>Production</strong>: ( y<em>t = a_t + k</em>{t-1} + (1-)h_t )</li>
+<li><strong>Labor FOC</strong>: ( y_t = x_t + c_t + (1+)h_t )</li>
+<li><strong>NKPC</strong>: ( <em>t = -x_t + </em>{t+1} )</li>
+<li><strong>Capital accum.</strong>: ( k<em>t = i_t + (1-)k</em>{t-1} )</li>
+<li><strong>Net worth</strong>: ( n<em>t = RRks (rk_t - r</em>{t-1}) + r<em>{t-1} + n</em>{t-1} + en_t )</li>
+<li><strong>Taylor rule</strong>: ( rn<em>t = rn</em>{t-1} + <em>{t-1} + s</em>{rn} etamp_t )</li>
+<li><strong>Fisher</strong>: ( rn<em>t = r_t + </em>{t+1} )</li>
+<li><strong>Shocks</strong>: ( a*t = _a a<em>{t-1} + s</em>a ea_t ), ( g_t = _g g<em>{t-1} + s</em>g eg_t ), ( z_t = _z z*{t-1} ), ( nr_t = (1-_a)a_t + (1-_z)z_t + etarn_t )</li>
+<li><strong>Leverage</strong>: ( lev_t = q_t + k_t - n_t )</li>
+<li><strong>Measurement</strong>: ( rAnn_t = rAnnSS + 4 rn_t ), ( piAnn_t = 4 pie_t ), ( rnAnn_t = rAnnSS + 4 nr_t ); ( rAnnSS = 100((1/)^4-1) ).</li>
+</ul>
+<hr>
+</section>
+<section id="practical-tips-for-simulation" class="level2">
+<h2 class="anchored" data-anchor-id="practical-tips-for-simulation">11) Practical tips for simulation</h2>
+<ul>
+<li>Keep the shock sizes moderate when simulating with a <strong>zero lower bound</strong> (ZLB) or an <strong>occasionally binding</strong> constraint—large negative natural-rate shocks can cause QP solvers to fail (in ELB routines).</li>
+<li>If convergence issues arise, try: slightly lower ( ) (weaker accelerator), reduce ( ) (less return volatility from Q), or increase policy inertia ( ) marginally (smoother rate path).</li>
+</ul>
+<hr>
+<p>알겠습니다. NK-DSGE 모형(BGG 기반)의 각 방정식에 대한 직관적 및 수학적 해석, 전체 모형의 작동 메커니즘, 그리고 자연이자율 충격 및 제로하한 정책 대응 시 반응까지 포함한 자세한 해설을 작성하여 Markdown 파일로 정리하겠습니다.</p>
+<p>작성된 문서는 다음을 포함할 예정입니다:</p>
+<ul>
+<li>전체 모형 개요</li>
+<li>각 방정식의 경제적·수학적 의미</li>
+<li>자연이자율 충격 및 제로금리 고정(선제적 지침 하) 시 동태 반응 분석</li>
+<li>정리된 내용을 담은 Markdown 문서 파일</li>
+</ul>
+<p>완성되면 바로 전달드리겠습니다.</p>
+</section>
+</section>
+<section id="bgg-기반-신케인즈-dsge-모형-방정식별-구조와-작동-원리" class="level1">
+<h1>BGG 기반 신케인즈 DSGE 모형: 방정식별 구조와 작동 원리</h1>
+<section id="개요-overview" class="level2">
+<h2 class="anchored" data-anchor-id="개요-overview">개요 (Overview)</h2>
+<p>이 모형은 <strong>Bernanke-Gertler-Gilchrist (BGG)</strong>의 금융가속기(framework)를 신케인즈(새로운 케인즈 학파) DSGE 모델에 통합한 변형된 버전입니다. 즉, 명목경직성(가격이 한동안 고정되는 특성)으로 인해 단기적으로 산출갭과 인플레이션이 발생하며, 한편으로는 금융마찰(신용시장 마찰)을 통해 경기변동이 <strong>금융가속기 효과</strong>로 증폭되는 구조를 갖고 있습니다. 모형에는 가계(소비자), 기업(생산자), 기업가(사업주)라는 세 유형의 경제주체가 존재하고, 통화정책을 수행하는 중앙은행도 포함됩니다. 가계는 합리적 기대하에 소비와 저축을 결정하며 <strong>Euler 방정식</strong>을 만족시킵니다. 기업은 노동과 자본을 투입해 재화를 생산하고, 가격경직성 때문에 단기적으로 초과이윤(마크업)이 변동하며 <strong>필립스 곡선</strong> 관계를 따릅니다. 기업가(사업주)는 자신의 <strong>순자산(net worth)</strong>을 바탕으로 자본을 투자하고 부족한 자금을 차입하여 생산자본을 구매하며, 이때 차입여건이 순자산 규모에 영향을 받아 <strong>위험프리미엄(외부자금 조달비용 가산금리)</strong>이 형성됩니다. 이러한 금융부문의 작동이 BGG 모델의 핵심으로, 순자산과 레버리지(leverage)의 변동이 자본투자와 산출에 피드백되어 경기변동을 <strong>증폭</strong>시키는 메커니즘을 만들어냅니다. 아래에서는 모형의 각 핵심 방정식을 하나씩 살펴보며 그 <strong>수학적 의미와 경제적 직관</strong>을 설명하고, 나아가 이러한 방정식들이 결합되어 모형이 어떻게 작동하는지 종합적으로 정리하겠습니다. 마지막으로, <strong>자연이자율에 큰 폭의 음(-)의 충격</strong>이 발생한 경우 이 모형에서 어떤 동태적 반응이 나타나는지, 그리고 <strong>명목금리를 장기간 0%로 고정하는 선제적 지침(Forward Guidance)</strong>이 있을 때 모형의 반응이 어떻게 달라지는지를 구체적으로 논의하겠습니다.</p>
+</section>
+<section id="주요-방정식별-설명-key-equations-and-intuition" class="level2">
+<h2 class="anchored" data-anchor-id="주요-방정식별-설명-key-equations-and-intuition">주요 방정식별 설명 (Key Equations and Intuition)</h2>
+<section id="자원제약식-resource-constraint" class="level3">
+<h3 class="anchored" data-anchor-id="자원제약식-resource-constraint">1. 자원제약식 (Resource Constraint)</h3>
+<p><strong>방정식:</strong> (y<em>t = c_y , c_t + i_y , i_t + g_y , g_t + c</em>{ey} , ce<em>t).<br>
+이 방정식은 <strong>국민소득의 사용처</strong>를 나타내는 경제의 총자원 제약식입니다. (y_t)는 산출(output) 혹은 <strong>산출갭</strong>을 의미하고, (c_t, i_t, g_t, ce_t)는 각각 <strong>소비</strong>, <strong>투자</strong>, <strong>정부지출</strong>, <strong>기업가(사업주) 소비</strong>를 나타냅니다. (c_y, i_y, g_y, c</em>{ey})는 이들 항목이 총산출에서 차지하는 <strong>스테디스테이트 비중</strong>입니다. 제시된 값에 따르면 소비가 약 51%, 투자 18%, 정부지출 20%, 기업가 소비 11% 정도의 비중을 갖으며 합이 1이 됩니다. 자원제약식의 의미는 <strong>“산출 = 총수요의 합”</strong>이라는 것으로, 한 경제 내에서 생산된 재화와 서비스의 양 (y_t)는 궁극적으로 민간소비, 투자, 정부지출, 기업가의 소비로 <strong>배분</strong>되어 사용됨을 나타냅니다. 이 식은 모형이 <strong>1차 선형화(로그 선형화)</strong>되어 있기 때문에 각 변수는 편차(예: 로그편차)로 해석되지만, 계수 (c_y, i_y, …)는 해당 항목의 정상상태 분배를 보여주어, <strong>어떤 수요항목이 산출 변동에 크게 기여하는지</strong>를 직관적으로 알려줍니다. 예를 들어, 동일한 1%p 충격이라도 소비((c_t)) 충격은 비중이 큰 만큼 (y_t)에 더 큰 영향(약 0.51)으로 반영되고, 투자 충격은 상대적으로 영향이 작게 반영됩니다.</p>
+</section>
+<section id="소비자-euler-방정식-consumption-euler-equation" class="level3">
+<h3 class="anchored" data-anchor-id="소비자-euler-방정식-consumption-euler-equation">2. 소비자 Euler 방정식 (Consumption Euler Equation)</h3>
+<p><strong>방정식:</strong> (c<em>t = -( r^n_t - - nr</em>t ) + c<em>{t+1}).<br>
+이 식은 <strong>소비를 결정하는 Euler 방정식</strong>의 선형화 형태로, <strong>가계의 최적화 조건</strong>을 나타냅니다. 한마디로 <strong>현재 소비와 미래 소비 간 선택</strong>에서, <strong>실질이자율</strong>이 어떻게 작용하는지를 보여줍니다. 좌변 (c</em>t)는 현재 시점 소비(의 편차)이고, 우변은 (c<em>{t+1}) (다음 기한의 기대 소비) <strong>및 이자율 항</strong>으로 구성되어 있습니다. (r^n</em>t)는 <strong>명목 정책금리</strong>(단기이자율)이고 ()는 <strong>다음 기의 기대 인플레이션</strong>이며 (nr_t)는 <strong>자연실질이자율</strong>(natural real interest rate)입니다. 자연이자율 (nr_t)는 물가가 완전히 신축적이고 산출갭이 0인 <strong>잠재균형</strong>에서의 실질금리로, 경기상황과 쇼크에 따라 변동하는 <strong>중립금리</strong>입니다. Euler 방정식의 구조는 다음과 같습니다:</p>
+<ul>
+<li>(r^n*t - )은 예상 <strong>실질이자율</strong>(현재 명목금리에서 기대 인플레이션을 뺀 값)입니다.</li>
+<li>(r^n*t - - nr_t)는 <strong>실질이자율 갭</strong>으로, 현재 경제에서 적용되는 실질이자율과 경제의 중립적인 자연실질이자율 간의 차이를 나타냅니다.</li>
+</ul>
+<p>이 방정식은 (c<em>t - c</em>{t+1} = -(r^n*t - - nr_t))와 동치이며, 이를 해석하면 <strong>실질이자율이 자연이자율보다 높으면 현재 소비가 줄어들고</strong>, 반대로 실질이자율이 자연이자율보다 낮으면 현재 소비가 늘어난다는 의미입니다. 이는 <strong>소비-저축 선택</strong>의 기본 원리를 반영한 것으로, 중앙은행이 금리를 인하하여 (명목금리를 낮추고 인플레이션 기대를 높이면) 실질이자율이 떨어지면 가계는 저축보다 소비를 늘이고, 금리를 올려 실질이자율이 높아지면 소비를 뒤로 미루어 저축을 늘린다는 설명과 일치합니다. 결과적으로 Euler 식은 <strong>통화정책</strong>(금리 조정)과 <strong>가계소비</strong> 간의 직접적인 연결 고리이며, 나아가 산출갭 (y_t) 변동의 핵심적 전파 경로입니다. 특히 (nr_t) (자연이자율) 항의 존재는 경제에 <strong>수요충격</strong>이나 <strong>선호충격</strong>이 발생하여 자연금리가 변할 때, 실제 금리가 이에 얼마나 따라가지 못하면 소비와 산출에 갭이 생기는지 보여주는 중요한 요소입니다.</p>
+</section>
+<section id="기업가-소비-방정식-entrepreneurial-consumption-equation" class="level3">
+<h3 class="anchored" data-anchor-id="기업가-소비-방정식-entrepreneurial-consumption-equation">3. 기업가 소비 방정식 (Entrepreneurial Consumption Equation)</h3>
+<p><strong>방정식:</strong> (ce_t = n_t).<br>
+이 식은 <strong>기업가(사업주)의 소비</strong> (ce_t)가 <strong>기업가의 순자산</strong> (n_t)와 같음을 나타냅니다. 여기서 (n_t) (net worth)은 기업가들이 보유한 자기자본의 실질가치로, <strong>이전 시점까지 축적된 부(富)</strong>를 의미합니다. 기업가 소비를 이렇게 설정한 배경에는 BGG 모형의 <strong>기업가 행동 가정</strong>이 자리잡고 있습니다. BGG 금융가속기 모형에서는 기업가가 무한정 자본을 축적하지 못하도록, 매 기별로 일부 기업가는 <strong>퇴장(파산 또는 은퇴)</strong>하고 해당 기업가의 순자산을 즉각 소비해버린다고 가정합니다. 위 식 (ce_t = n_t)는 <strong>기업가 부문의 예산 제약</strong>을 단순화한 것으로, “해당 기간에 퇴장하는 기업가들이 자기 순자산 전부를 소비한다”는 의미로 해석할 수 있습니다. 예를 들어 기업가들의 일정 비율(여기서 (1-), 약 2.72%)가 매기 퇴장한다고 할 때, 그들이 남긴 순자산이 모두 소비로 (가계나 새로운 기업가에게) 이전됩니다. 따라서 기업가 부문 전체로 보면, 각 시점 기업가 소비 (ce_t)의 증감은 <strong>순자산 (n_t)의 증감과 동일</strong>하게 움직입니다. 경제적 직관으로는, 경기 호황 등으로 기업가들의 순자산이 늘어나면 (예: 투자 수익이 커지면) 그 중 일부가 즉각 <strong>소비</strong>로 이어지고, 반대로 순자산이 줄어드는 상황 (예: 투자 실패나 금융손실)은 기업가들의 소비 축소로 직결됩니다. 이 관계는 금융부문의 <strong>자기 자본 소진(decapitalization)</strong>과 <strong>배당/소비</strong> 결정이 강하게 연결되어 있음을 보여주며, 나중에 나오는 (n_t)의 움직임이 거시경제에 피드백되는 경로 중 하나입니다. 또한 이 단순화는 기업가가 <strong>장기 축재</strong>하기보다 어느 정도 이윤을 즉시 소비/인출함으로써, 금융가속기 모형에서 <strong>순자산 축적의 과도한 증가를 방지</strong>하는 역할도 합니다 (기업가들이 너무 많은 내부자금을 갖게 되면 외부차입의 필요성이 줄어들어 금융가속기 효과가 약해지므로, 적정 수준에서 자산이 유출되게 만드는 장치입니다).</p>
+</section>
+<section id="위험스프레드-방정식-risk-spread-equation" class="level3">
+<h3 class="anchored" data-anchor-id="위험스프레드-방정식-risk-spread-equation">4. 위험스프레드 방정식 (Risk Spread Equation)</h3>
+<p><strong>방정식:</strong> (rk<em>{t+1} = r^n_t - - ( n</em>t - q_t - k_t )).<br>
+이 식은 <strong>기업가가 요구하는 자본 수익률</strong> (rk<em>{t+1})과 <strong>안전한 실질이자율</strong> 간의 관계를 보여주는 <strong>위험스프레드(가산금리) 방정식</strong>입니다. (rk</em>{t+1})은 <strong>다음 기회 기업가가 보유한 자본으로부터 얻는 기대수익률</strong>을 나타내고, (r^n_t - )은 위에서처럼 <strong>실질정책이자율</strong>입니다. 우변의 두 번째 항에는 기업가의 <strong>순자산 대비 부채 비율</strong>이 등장합니다. (n_t - q_t - k_t)는 기업가 <strong>순자산 (n_t)</strong>에서 <strong>자본의 총가치 (q_t + k_t)</strong>를 뺀 값인데, 이는 음(-)의 값을 취해 <strong>레버리지(부채비율)</strong>와 연결됩니다. 실제로 모형에서 <strong>레버리지</strong>를 (lev_t = q_t + k_t - n_t)로 정의하고 있으므로, (n_t - q_t - k_t = -,lev_t)입니다. 따라서 위 식은 다음과 같이 다시 쓸 수 있습니다:</p>
+<p>[ rk*{t+1} = (r^n_t - ) + , lev_t. ]</p>
+<p>이는 <strong>“기업가가 요구하는 자본의 기대수익률 = 무위험 실질금리 + 레버리지에 따른 위험프리미엄”</strong> 형태로 해석됩니다. 여기서 ()는 <strong>금융가속기 강도</strong>를 나타내는 계수로, <strong>레버리지 변화가 위험스프레드에 미치는 민감도</strong>를 의미합니다. 주어진 (= 0.2)은 <strong>순자산 대비 부채비율 1%p 증가가 향후 자본수익률 요구치 약 0.2%p 상승을 가져온다</strong>는 식으로 해석할 수 있습니다 (물론 선형화된 근사치 개념). 경제적 의미는 명확합니다: <strong>기업가의 순자산이 부족하고 부채의존도가 높을수록(레버리지↑)</strong> 대출자(금융기관)는 대출상환 불이행 위험이 커졌다고 보기 때문에, 기업가는 투자 프로젝트에 대해 <strong>더 높은 기대수익률</strong>을 내지 않으면 자금을 조달하기 어려워집니다. 즉, <strong>외부자금 조달비용의 가산금리(External Finance Premium)</strong>가 상승하는 것이죠. 반대로 기업가가 자기자본(내부자금)을 충분히 보유하면(레버리지↓) <strong>위험스프레드가 축소</strong>되어 비교적 낮은 금리로도 투자자금을 확보할 수 있게 됩니다. 이 관계를 통해 금융가속기 메커니즘이 작동하는데, 예를 들어 <strong>경기침체기</strong>에는 기업가 순자산 (n<em>t)가 타격을 입어 감소하고 레버리지가 올라가므로 위험프리미엄 (, lev_t)도 커집니다. 이는 투자에 필요한 자본조달 비용 (rk</em>{t+1})을 높여 <strong>투자위축</strong>을 야기하고, 이는 다시 경기침체를 심화시켜 순자산을 더 떨어뜨리는 <strong>악순환</strong>이 만들어집니다. 반대로 <strong>호황기</strong>에는 순자산이 늘고 레버리지가 낮아져 위험스프레드가 축소되고, 낮은 차입비용이 투자와 생산을 더욱 촉진하여 순자산이 증가하는 <strong>선순환</strong>이 생깁니다. 이렇게 <strong>순자산 - 레버리지 - 위험프리미엄 - 투자/산출</strong>의 연결고리가 피드백을 형성하는 것이 금융가속기의 핵심이며, 위 방정식이 바로 그 정량적 관계를 간단히 요약한 것입니다.</p>
+</section>
+<section id="자본수익률-산정식-return-to-capital-equation" class="level3">
+<h3 class="anchored" data-anchor-id="자본수익률-산정식-return-to-capital-equation">5. 자본수익률 산정식 (Return to Capital Equation)</h3>
+<p><strong>방정식:</strong> (rk*t = (1-_i)( y_t - k<em>{t-1} - x</em>t ) + _i ( q_t - q<em>{t-1} ).)<br>
+이 식은 <strong>기업가가 보유한 자본의 현재기 수익률</strong> (rk</em>t)를 구성하는 요소를 보여줍니다. 기업가는 이전 시점에 (q*{t-1})의 가격으로 (k_{t-1})만큼의 자본을 매입하여 보유하고 있다가, 현재 시점에 그 자본을 활용해 생산에 투입하고 (임대하거나 직접 사용하고) 난 후 다시 시장에 팔게 됩니다. 그러면 두 가지 형태의 수익이 발생할 수 있습니다:</p>
+<ul>
+<li>하나는 자본을 생산에 투입하여 얻게 되는 <strong>임대소득 또는 생산수익</strong>이고,</li>
+<li>다른 하나는 사용 후 남은 자본을 매각할 때 발생하는 <strong>자본가격의 변화</strong>(자본 이득 혹은 손실)입니다.</li>
+</ul>
+<p>위 방정식에서 ((1-i)( y_t - k<em>{t-1} - x</em>t )) 항은 전자에 해당하고, (_i ( q_t - q<em>{t-1} )) 항은 후자에 해당합니다. 먼저 (y</em>t - k<em>{t-1} - x</em>t) 부분을 살펴보면, (y_t) (산출량의 편차)에서 (k<em>{t-1}) (전기 보유자본량의 편차)과 (x</em>t) (가격<strong>마크업</strong>의 편차)를 뺀 형태입니다. 직관적으로 이는 <strong>1단위 자본당 얻은 실질산출(产出)</strong> 혹은 **자본의 한계생산력<em>(marginal product of capital)<em>에 대응하는 표현**입니다. 마크업 (x_t)는 기업이 가격을 한계비용보다 얼마나 높게 책정했는지를 나타내는데, 만약 (x_t)가 양(+)이면 기업이 가격을 높게 받아 이윤을 많이 챙겼다는 뜻이고, 그만큼 자본소유주로서 기업가가 가져가는 임대소득(혹은 자본투입 대비 보상)은 줄어들 수 있습니다. 반대로 (x_t)가 음(-)이면 경쟁이 심해 가격이 한계비용 수준에 가까워졌음을 의미하고, 이때는 자본투입에 대한 대가(임대료)가 높아지게 됩니다. 따라서 (y_t - k</em>{t-1} - x</em>t)는 <strong>자본 한 단위당 실질수익</strong>이라 해석할 수 있고, ((1-_i))는 그 수익이 (rk_t)에 기여하는 비중을 나타냅니다. (_i)는 모델에서 “위험 인자” 혹은 <strong>수익 구성비율 파라미터</strong>로 볼 수 있는데, 값을 0.96으로 높게 잡았으므로 <strong>자본수익의 대부분</strong>이 두 번째 부분, 즉 자본가격 변동에서 나오도록 설정되어 있습니다. 두 번째 항 (_i (q_t - q<em>{t-1}))는 <strong>보유한 자본 자산의 가격 변동으로 인한 수익</strong>입니다. 예를 들어 경기가 좋아져 현재 자본가격 (q</em>t)가 이전 대비 상승했다면 ((q_t - q<em>{t-1} &gt; 0)), 기업가는 자본을 비싸게 팔아 그만큼 이득을 얻으므로 (rk</em>t)가 증가합니다. 반대로 자본가격이 떨어지면 (rk_t)는 낮아집니다. (_i)가 0.96이라는 것은 <strong>자본가격 변동이 자본수익률 변동의 핵심 요인</strong>임을 뜻합니다. 이는 자본이 상당히 <strong>내구재</strong>이고 1기간만 사용하고 사라지는 투입물이 아니기 때문입니다. 실제 경제에서 기업의 자본투자로 인한 수익은 “현재 영업이익 + 자산 가치 변동”으로 나타나는데, 보통 <strong>자산가격이 안정적일 때는 영업이익(임대료)이 주된 수입</strong>이지만, 자산가격이 크게 움직이는 금융불안 또는 거품기에는 <strong>자산가격 변동이 투자수익 변동의 주요인</strong>이 될 수 있습니다. 모형은 이러한 상황을 단순화해 반영한 것입니다. 따라서 정리하면, <strong>(rk_t)</strong>는 “자본으로부터 얻는 <strong>현재 수익</strong>(생산참여로 얻은 소득)과 <strong>미실현 수익</strong>(자본자산 평가차익)의 합”을 나타내며, (_i)가 그 두 가지 구성의 비율을 조절합니다. 이 방정식을 통해 기업가의 순자산에 영향을 주는 (rk_t)의 움직임을 설명할 수 있는데, 예를 들어 <strong>경기침체 시</strong>에는 산출 (y_t)가 감소하고 마크업 (x_t)는 하락(가격이 경직적이어서 생산자들이 일부 가격을 인하하거나, 수요부진으로 초과공급 상태)할 수 있습니다. (y_t - k<em>{t-1} - x</em>t)가 줄면 자본의 한계생산 소득이 줄어 (rk_t) 하락 요인이 됩니다. 게다가 침체기에는 자본재 가격 (q_t) 역시 떨어질 가능성이 커서 ((q_t - q*{t-1}))도 음수가 되어 (rk_t)를 크게 떨어뜨립니다. 반대로 <strong>호황 시</strong>에는 (y_t)↑, (x_t)↑(일시적 과점력 강화) 등으로 1단위 자본생산소득이 늘고, (q_t) 상승까지 겹치면 (rk_t)가 크게 높아집니다. 이렇게 (rk_t)의 변동은 곧 기업가의 순자산 변동으로 이어져 (다음 식 참고) 금융가속기 경로를 통해 실물경제에 파급됩니다.</p>
+</section>
+<section id="자본-가격-방정식-price-of-capital-equation" class="level3">
+<h3 class="anchored" data-anchor-id="자본-가격-방정식-price-of-capital-equation">6. 자본 가격 방정식 (Price of Capital Equation)</h3>
+<p><strong>방정식:</strong> (q<em>t = , ( i_t - k</em>{t-1} ).)<br>
+이 식은 자본의 실질가격 (q<em>t) (토빈의 Q로 해석 가능)가 어떻게 결정되는지를 보여주며, <strong>투자와 자본 축적의 관계</strong>를 나타내는 <strong>투자자본 조정비용</strong> 방정식입니다. ()는 <strong>자본조정비용 계수</strong>이고, (i_t)는 현재 시점의 투자, (k</em>{t-1})은 이전 시점의 자본스톡입니다. 상식적으로 생각하면, <strong>투자가 크게 증가</strong>하면 (즉, 많은 신규 자본을 한꺼번에 설치하려 하면) 설치/조정 비용이 증가하여 <strong>기존 자본의 가치</strong>가 상대적으로 상승하게 됩니다. 반면, 투자수요가 낮을 때는 자본을 늘리는 데 큰 비용이 들지 않으므로 자본가격이 낮아집니다. 이 식을 선형화 형태로 보면, (i<em>t - k</em>{t-1})은 <strong>자본스톡 대비 투자비율의 편차</strong> 정도로 해석할 수 있습니다. 따라서 (i_t)가 평소보다 많아 (자본증가 속도가 빨라) 양(+)이면 (q_t)도 양(+)으로 상승하고, (i_t)가 적으면 (q_t)는 음(-)으로 떨어집니다. 계수 ()는 <strong>투자 변동이 자본가격에 주는 영향의 크기</strong>를 결정하는데, 이 값이 클수록 소폭의 투자 증감에도 자본가격이 크게 움직이고, 값이 작으면 투자 증감에 대한 자본가격 반응이 작습니다. 요약하면, 이 방정식은 <strong>토빈의 Q 이론</strong>을 반영한 것으로, 기업이 투자 결정을 할 때 <strong>한계투자의 비용</strong>이 기존 자본의 가치로 나타나며, <strong>투자가 급증하면 자본의 한계가격(한계비용)이 올라간다</strong>는 경제적 의미를 갖습니다. 또한 이는 모형에서 <strong>투자 지출 (i_t)과 자본가치 (q_t)</strong>를 연결하여 투자변동이 자본가격 및 나아가 <strong>기업가의 순자산</strong>과 <strong>레버리지</strong>에도 영향을 미치는 경로를 제시합니다. 예를 들어, 기술진보나 정책 등의 영향으로 <strong>투자 수요가 급증</strong>하면 (i_t)↑로 인해 (q_t)↑ (자본가격 상승)이 발생합니다. 자본가격이 상승하면 기업가의 <strong>자산 가치</strong>가 높아져 순자산 (n_t)이 늘고 레버리지가 낮아지는 효과가 있으며, 이는 위험스프레드 축소를 통해 추가적인 투자촉진을 불러올 수 있습니다. 반대로 <strong>투자 위축기</strong>에는 (q_t)가 떨어져 기존 자본의 가치가 하락하고, 이는 기업가 부채비율을 높여 금융여건을 더욱 악화시킬 수 있습니다. 이렇듯 (q_t)는 실물투자와 금융건전성 사이를 연결하는 <strong>매개 변수</strong> 역할을 합니다.</p>
+</section>
+<section id="생산함수-production-function" class="level3">
+<h3 class="anchored" data-anchor-id="생산함수-production-function">7. 생산함수 (Production Function)</h3>
+<p><strong>방정식:</strong> (y<em>t = a_t + , k</em>{t-1} + , h<em>t.)<br>
+이 식은 경제의 <strong>생산기술</strong>을 나타내는 선형화된 <strong>생산함수</strong>입니다. (a_t)는 <strong>총요소생산성(TFP) 쇼크</strong>로 볼 수 있는 <strong>생산성 수준</strong>의 편차이며, (k</em>{t-1})은 이전 시점 자본 투입량 (편차), (h<em>t)는 <strong>노동 투입량</strong>(근로시간 등)의 편차입니다. ()와 ()는 각각 <strong>자본의 산출탄력성</strong>과 <strong>노동의 산출탄력성</strong>을 나타내는 계수입니다. 주어진 값으로는 (= 0.35), (= 0.64)인데, 이는 자본과 노동의 소득분배 비중이 약 35% 대 65% 정도임을 시사합니다 (0.35 + 0.64 = 0.99로 1에 근접). 이 값들은 기업이 <strong>규모수익 불변의 코브더글라스 생산함수</strong> (Y = A K^{0.35} H^{0.65})를 갖는다는 가정을 반영한 것으로 볼 수 있습니다 (소수점 차이는 마크업이나 기타 요소 반영에 따른 미세한 조정일 수 있습니다). 생산성 증가 (a_t)는 같은 자본·노동으로 더 많은 산출을 가능케 하므로 (y_t)를 직접 밀어올리고, 자본 투입이 많을수록 ((k</em>{t-1})↑) 또는 노동을 많이 투입할수록 ((h_t)↑) 산출이 증가합니다. 이 식은 거시모형의 <strong>공급 측면 구조</strong>를 나타내며, 자본과 노동의 상대적 중요도를 파라미터로 명시해줍니다. 또한 <strong>잠재산출(자연산출)</strong>의 개념도 이 식을 통해 정의되는데, 가격이 완전히 신축적인 경제에서는 마크업이 일정(통상 0)하고 노동공급도 균형 수준에서 결정되므로, (y_t)는 이 생산함수로 주어지는 <strong>최적산출량</strong>이 됩니다. 요컨대, 이 생산함수는 <strong>실제 산출갭 (y_t)</strong>를 결정짓는 <strong>공급능력</strong>을 규정하며, 생산성 쇼크 (a_t)에 의해 <strong>공급측 요인으로 인한 경기변동</strong>이 발생할 수 있음을 보여줍니다. 예를 들어 (a_t) (기술진보)가 1% 상승하면 동일한 자본·노동으로 산출이 1% 늘어나므로 (y_t)가 1% 증가하고, 이는 물가하방 압력(공급충격으로 인한 인플레이션 둔화)을 주는 등 거시경제에 영향을 미칩니다.</p>
+</section>
+<section id="노동에-대한-최적조건-foc-for-labor-노동공급-수요-균형식" class="level3">
+<h3 class="anchored" data-anchor-id="노동에-대한-최적조건-foc-for-labor-노동공급-수요-균형식">8. 노동에 대한 최적조건 (FOC for Labor / 노동공급-수요 균형식)</h3>
+<p><strong>방정식:</strong> (y<em>t = x_t + c_t + (1+) , h_t.)<br>
+이 식은 <strong>노동에 대한 1차 조건</strong>을 나타낸 것으로, 가계의 <strong>노동공급</strong>과 기업의 <strong>노동수요</strong>가 균형을 이룰 때 성립하는 관계입니다. 이를 <strong>노동시장 균형 조건</strong> 혹은 <strong>효용극대화의 한계조건</strong>으로 이해할 수 있습니다. 직관적인 유도 과정은 다음과 같습니다. 가계는 소비 (c_t)와 여가의 상충관계에서 <strong>한계대체율</strong> 조건을 만족시키고, 기업은 노동의 한계생산물이 실질임금에 상응하게 고용을 결정합니다. 가계의 효용함수가 (일례로 (U = C - H^{1+})) 형태라면, 노동에 대한 <strong>한계효용 손실</strong>과 소비의 한계효용 간 비율이 실질임금과 같아지는 조건이 성립합니다. 그 결과 <strong>가계 측면</strong>에서는 대략적인 관계 (W/P = C_t H_t^{}) (실질임금 = 소비 </em> 노동^η)와 같은 관계가 유도되고, <strong>기업 측면</strong>에서는 한계생산물 조건 (W/P = MC) (실질임금 = 한계생산물 _ 한계비용)이나, 완전경쟁이라면 (W/P = )이 됩니다. 여기서 (MC)는 <strong>실질한계비용</strong>, (x_t)는 <strong>마크업(가격/한계비용)</strong>이므로 (1/x_t = MC)로 볼 수 있습니다. 여러 식을 정리하면 (세부 유도는 생략) <strong>노동시장 균형식</strong>은 <strong>산출 = 마크업 + 소비 + (1+η)*노동투입</strong> 형태로 나타낼 수 있는데, 그것이 바로 (y_t = x_t + c_t + (1+)h_t)입니다. 이 식의 경제적 의미를 해석해 보면, <strong>산출을 늘리기 위해서는 세 가지 경로가 있다는 것</strong>을 보여줍니다:</p>
+<ul>
+<li><p><strong>마크업 조정 ((x_t)):</strong> 마크업 (x<em>t)는 가격과 한계비용의 차이인데, 완전경쟁에 비해 가격이 더 높게 책정되어 있으면 (마크업↑) 생산이 억제됩니다. 따라서 (x_t)가 낮아지면 (즉, 기업들이 가격을 경쟁적으로 인하하거나 비용이 상승하여 마크업이 줄어들면) 산출 (y_t)가 늘어나는 쪽으로 유인됩니다. 식에서 (x_t)가 증가하면 (y_t)가 증가해야 등식이 맞는데, 사실 (x_t)는 </em>마크업 격차_(desired markup과의 차이)로 이해하는 게 적절합니다. 정상상태 마크업이 일정 수준에 있고 (x_t)가 그 편차라면, (x_t)가 양(+)이라는 것은 실제 마크업이 높아 한계비용 대비 가격이 높음을 뜻해 산출이 수요 부족으로 줄어든 상황이고, (x_t)가 음(-)이면 마크업이 낮아 기업들이 적은 이윤을 감수하고 많이 생산하는 상황이라고 볼 수 있습니다. 따라서 (x_t)가 낮아지는 것은 (마크업 감소 = 한계비용 상승 또는 가격하락) 기업들이 더 많이 생산하게 만드는 효과를 냅니다. 요컨대 (x_t)는 <strong>수요 측면에서 산출갭에 영향을 주는 가격변수</strong>입니다.</p></li>
+<li><p><strong>소비 수요 ((c_t)):</strong> 소비 (c_t)가 증가하면 (수요증가) 산출 (y_t)를 증가시키는 방향으로 작용합니다. 노동시장 관점에서 보면, 소비가 증가하면 가계의 노동공급 결정에 변화를 일으킵니다. 소비가 높다는 것은 <strong>한계효용체감</strong>으로 인해 한계효용이 낮아진 상태이므로, 가계는 여가보다 추가 소비를 얻는 것에 덜 민감해집니다. 따라서 같은 임금을 주더라도 노동공급을 늘릴 유인이 생겨, 노동투입 (h_t)를 증가시킬 수 있습니다. 이는 생산을 늘려 (y_t) 상승과 일치합니다. 식에서 (c_t)가 1 상승하면 (y_t)도 동일하게 1 상승하려면 노동투입 (h_t) 쪽에서 조정이 이뤄져야 합니다. 결국 소비증가는 생산증가와 일관되게 움직입니다.</p></li>
+<li><p><strong>노동투입 ((h_t)):</strong> 마지막 항 ( (1+) h_t )는 노동 투입이 산출에 기여하는 부분입니다. ()는 <strong>프리쉬 노동공급 탄력성의 역수</strong>(값 0.33이면 노동공급 탄력성 ~3)로, (1+)는 <strong>노동 투입 변화가 산출에 미치는 효과</strong>를 나타냅니다. 노동 1 단위가 증가하면 일단 산출이 증가하는 직접효과(계수 1)가 있고, 추가로 ()만큼 <strong>소비-여가간 효용교환 효과</strong>가 반영됩니다. 즉, 노동을 더 많이 할수록 가계는 여가손실로 인한 효용감소를 상쇄하기 위해 더 많은 임금(소비)을 필요로 하므로, 균형을 맞추려면 산출이 그만큼 더 커져야 한다는 뜻입니다. 결과적으로 (h_t)가 1% 증가하면 (y_t)는 1%보다 큰 ((1+))% 증가로 연결됩니다. 이 항은 <strong>노동공급의 비탄력성 정도</strong>를 반영한 것으로, ()가 클수록 (노동공급이 비탄력적일수록) 같은 노동 증가가 산출을 크게 늘려야 균형이 잡히는, 즉 실질임금이 크게 올라야 노동을 공급한다는 것을 의미합니다.</p></li>
+</ul>
+<p>이 식은 결국 <strong>산출, 가격마크업, 소비, 노동 간의 상호관계</strong>를 나타낸 것으로, 신케인즈 모형에서 <strong>총공급 곡선의 미시적 기반</strong>이 됩니다. 특히 마크업 (x_t)와 산출 (y_t)의 반대 방향 관계는 <strong>필립스 곡선</strong>의 기초가 되며, 소비와 노동의 관계는 <strong>IS 곡선</strong>(Euler 식)과 함께 거시적 수요-공급 균형을 묘사합니다.</p>
+</section>
+<section id="필립스-곡선-new-keynesian-phillips-curve" class="level3">
+<h3 class="anchored" data-anchor-id="필립스-곡선-new-keynesian-phillips-curve">9. 필립스 곡선 (New Keynesian Phillips Curve)</h3>
+<p><strong>방정식:</strong> (t = -, x_t + , .)<br>
+이 식은 신케인즈 모형의 <strong>물가 설정 관계</strong>, 즉 <strong>뉴케인즈 필립스 곡선</strong>의 선형 형태입니다. (_t)는 <strong>인플레이션 (물가상승률)</strong>이고, (x_t)는 앞서 나온 <strong>마크업 갭</strong>입니다. ()는 가계의 할인인자(여기선 0.99로, 기대 인플레이션에 대한 가중치 역할)이고, ()는 <strong>필립스 곡선의 기울기</strong>(물가경직성 정도에 따른 계수)입니다. 이 식을 해석하면 다음과 같습니다:</p>
+<ul>
+<li><p><strong>기대항 (_{t+1}):</strong> 기업이 미래의 예상 인플레이션을 고려해 현재 가격을 조정하는 <strong>앞으로형 기대</strong> 요소입니다. ()로 1에 매우 가깝기 때문에, 미래 인플레이션 전망이 높으면 현재 인플레이션도 높아지는 경향이 큽니다. 이는 합리적 기대 하에서 <strong>인플레이션의 관성</strong>을 나타내는 부분입니다.</p></li>
+<li><p><strong>실물경기 압력항 (-x_t):</strong> 현재 마크업 갭 (x_t)가 인플레이션에 미치는 영향입니다. ()값은 0.04로 비교적 작게 설정되어 있는데, 이는 <strong>가격경직성이 커서</strong> 산출이나 마크업 변화가 물가에 완만한 영향을 준다는 뜻입니다. 식의 부호가 음(-)인 점에 주목해야 합니다. (x_t)가 <strong>양(+)</strong>이라는 것은 기업들이 현재 <strong>마크업을 높게</strong> 가져가고 있다는 의미인데, 마크업이 높다는 것은 <strong>한계비용에 비해 가격을 많이 올려받는 상황</strong>이라서 비용측면의 물가 상승 압력이 낮습니다. 따라서 (x_t)가 높으면 (즉, 기업이 이윤을 많이 붙이고 있다는 것은 비용상승이 적거나 수요가 낮다는 신호) **인플레이션 (_t)<strong>는 오히려 낮아지는 방향이므로 (-x_t)가 음(-)으로 작용합니다. 반대로 (x_t)가 </strong>음(-)<strong>이면 기업들이 이윤을 줄이고 있다는 뜻이고, 이 경우 생산 원가 대비 가격을 낮게 책정하므로 마진이 줄어든 만큼 </strong>한계비용 상승** 또는 <strong>수요 과열</strong>을 의미하여 <strong>인플레이션을 높이는 효과</strong>를 냅니다. 요컨대 (x_t)는 <strong>경기의 과열/침체 정도</strong>를 나타내는 <strong>비용압력 지표</strong>로 볼 수 있고, 경기가 좋아 마진이 줄어들고 비용이 상승하면 ((x_t)↓) 물가가 오르고, 경기가 나빠 마진이 늘어나면 ((x_t)↑) 물가가 떨어지는 식입니다. 이는 전통적인 <strong>산출갭-인플레이션 간 반비례 관계</strong>와 맥락을 같이 합니다. 실제로 (x_t)는 기업의 마진이니까, 그것을 일정 목표 대비한 격차로 보면 <strong>(음의) 산출갭</strong>과 비례한다고 할 수 있습니다. 산출이 잠재치를 웃돌 때 ((y_t) 양호) 마크업이 하락((x_t)↓)해서 인플레이션이 올라가고, 산출이 부진할 때 ((y_t) 침체) 마크업이 높아져((x_t)↑) 인플레이션이 내려가는 현상은 <strong>필립스 곡선</strong>의 핵심이기도 합니다.</p></li>
+</ul>
+<p>이 필립스 곡선 식은 <strong>현재 인플레이션</strong>이 <strong>미래 인플레이션 기대</strong>와 <strong>현재 경기상황(마크업/산출갭)</strong>에 의해 결정됨을 보여줍니다. () 값이 작다는 것은 가격 경직성이 상당히 크다는 뜻인데, 예를 들어 (= 0.04)이라면 산출갭(혹은 (x_t)) 1%의 변화가 즉각 인플레이션을 0.04%p 밖에 못 움직일 정도로 <strong>물가 반응이 둔감</strong>하다는 의미입니다. 이는 기업들이 가격을 자주 조정하지 못하거나, 메뉴비용 등으로 인해 경기변동이 당장의 가격결정에 큰 영향을 못 미치는 상황을 반영합니다. 따라서 통화정책 등으로 수요를 조절해도 인플레이션에 <strong>시차를 두고 서서히</strong> 영향이 나타나는 구조라고 할 수 있습니다. 이 식은 향후 자연이자율 충격 시나리오에서 <strong>디플레이션 압력</strong>이나 <strong>인플레이션 기대</strong>가 어떤 역할을 하는지 분석할 때 핵심적으로 작용합니다.</p>
+</section>
+<section id="자본-축적식-capital-accumulation-equation" class="level3">
+<h3 class="anchored" data-anchor-id="자본-축적식-capital-accumulation-equation">10. 자본 축적식 (Capital Accumulation Equation)</h3>
+<p><strong>방정식:</strong> (k<em>t = , i_t + (1-) , k</em>{t-1}.)<br>
+이 식은 <strong>자본의 축적(dynamic)</strong>을 나타내는 표준적인 법칙으로, 투자와 기존 자본으로부터 <strong>다음 기의 자본스톡</strong>이 형성되는 과정을 보여줍니다. ()는 <strong>자본의 감가상각률</strong>로, 모형에서는 0.025 (분기별 약 2.5%, 연율로 약 10%)로 설정되어 있습니다. 방정식을 해석하면: 현재 시점의 신규 투자 (i<em>t) 중 () 비율만큼이 <strong>자본증가로 연결</strong>되고, 이전 시점 보유자본 (k</em>{t-1}) 중 ((1-)) 비율만큼이 <strong>감가상각 후 잔존</strong>하여 다음 시점 자본 (k<em>t)로 이월된다는 의미입니다. 쉽게 말해, <strong>“다음 기의 자본 = 새로 늘린 자본 + 남은 기존 자본”</strong>입니다. 이 식은 사실 비선형 원식 (K</em>{t} = I<em>{t} + (1-) K</em>{t-1})의 선형 근사 형태입니다 (여기 변수들은 로그편차나 비율 편차 개념으로 보시면 됩니다). 자본축적식은 경제에 <strong>투자의 동태적 효과</strong>를 설명하는 핵심입니다. 예를 들어 현재 어떤 충격으로 투자 (i<em>t)가 증가하면, 당장은 산출(y_t)에 (i_y) 만큼 기여하여 상승시키겠지만, 이 식에 의해 **미래의 자본스톡 (k</em>{t+1})도 증가<strong>하게 됩니다. 자본스톡 증가분은 이후 </strong>생산능력 확충<strong>으로 이어져 미래 산출을 높이고, 또한 추가 자본이 기업가 재무제표에 자산으로 잡혀 순자산 증가, 레버리지 개선 등의 </strong>금융 측면 파급효과<strong>도 갖습니다. 감가상각률 ()가 0.025라는 것은 </strong>자본이 비교적 천천히 축적<strong>됨을 의미합니다. 한 기(분기)에 자본의 2.5%만 소진되므로, 투자 증가의 효과가 누적되어 </strong>장기간에 걸쳐 자본축적<strong>에 영향을 줍니다. 따라서 일시적 투자쇼크라도 그 여파가 서서히 사라지며, </strong>hump-shaped** 자본과 산출 반응을 만들 수 있습니다. 이 식은 모형의 <strong>내부 모멘텀</strong>을 제공하는 요소이기도 하며, 특히 금융가속기 모형에서는 자본축적과 기업가 재정상태가 얽혀 **충격의 지속성**을 높여주는 방향으로 작용합니다.</p>
+</section>
+<section id="순자산-진화식-evolution-of-net-worth" class="level3">
+<h3 class="anchored" data-anchor-id="순자산-진화식-evolution-of-net-worth">11. 순자산 진화식 (Evolution of Net Worth)</h3>
+<p><strong>방정식:</strong> (n<em>t = , RR^{ks} ( rk_t - (r^n</em>{t-1} - t) ) + ( r^n<em>{t-1} - t ) + n</em>{t-1} + e^n_t.)<br>
+이 식은 <strong>기업가 부문의 순자산 (n_t) (내부자금)</strong>가 시간에 따라 어떻게 변하는지를 나타냅니다. 쉽게 말해 <strong>“이전 시점의 순자산이 현재 어떻게 늘어나거나 줄어드나”</strong>를 보여주는 식입니다. 우변을 몇 부분으로 나누어 살펴보겠습니다:</p>
+<ul>
+<li><p>(n_{t-1}): <strong>이전 기의 순자산</strong>이 현 시점에 이월된 부분입니다. (선형화되어 있으므로 직접 더해지는 형태)</p></li>
+<li><p>(( r^n*{t-1} - _t )): <strong>기초 순자산에 대한 안전자산 수익 부분</strong>입니다. 기업가가 지난 기에 보유한 순자산은 (만약 은행 예금 등 안전 자산에 넣어두었을 경우) 명목이자 (r^n<em>{t-1})만큼 불어나지만, 물가상승률 (t)만큼 실질가치가 깎입니다. 따라서 (r^n</em>{t-1} - t)는 <strong>실질 안전수익률</strong>이며, 이는 이전 순자산 (n<em>{t-1})에 곱해진 형태로 실질가치 증가분을 주어야 하지만, 선형화된 현재 식에서는 일정한 값처럼 더해지고 있습니다. 사실 정확히 말하면 (n</em>{t-1})과 ((r^n*{t-1}-_t))의 곱이 들어가야 하지만, 균형부근에서 정규화된 관계로 볼 수 있습니다. <strong>결과적으로 이 항은 기업가 순자산이 안전한 곳에 굴러 얻은 증가분</strong> 정도로 이해할 수 있습니다.</p></li>
+<li><p>(, RR^{ks} ( rk<em>t - (r^n</em>{t-1} - t) )): <strong>기업가 투자수익의 초과부분</strong>이 순자산에 미치는 영향입니다. ()는 <strong>기업가의 생존 확률</strong> (또는 “다음 기까지 생존하여 재투자하는 기업가의 몫”)을 나타냅니다. 주어진 (= 0.9728)은 약 97.28%의 기업가가 생존하고 2.72%가 퇴장한다는 의미로 해석할 수 있습니다. (RR^{ks})는 <strong>자본수익률의 정상상태 수준</strong>으로, 1.02 (약 1/분기 2%의 수익, 연간 약 8% 수익률)로 설정되어 있습니다. 이 둘의 곱 (, RR^{ks})는 정상상태에서 <strong>생존한 기업가들이 유지하는 자본수익 비율</strong> 정도로 볼 수 있습니다. 이어지는 괄호 부분 (( rk_t - (r^n<em>{t-1} - t) ))는 <strong>기업가가 실제로 얻은 자본수익률 (rk_t)</strong>에서 <strong>안전한 실질금리 비용</strong>을 뺀 <strong>초과수익률</strong>입니다. 즉, 기업가가 빚을 내 자본에 투자했을 때, 그 투자로 얻은 실질 수익률 (rk_t)과 차입 비용(지난 기 실질이자율) 간의 차이입니다. 만약 (rk_t)가 과거 대출금리보다 높았다면 그만큼 <strong>이익</strong>을 본 것이고, 낮았다면 <strong>손실</strong>을 본 것입니다. (RR^{ks})를 곱한 것은 그 중 <strong>생존한 기업가들이 실제 자기 순자산으로 회수한 몫</strong>을 의미합니다. 예를 들어, 지난 기에 기업가가 자기자본 (n</em>{t-1})과 부채를 합쳐 투자했는데, 실제 수익률 (rk_t)가 높아서 대출이자 이상으로 벌었다면 그 <strong>차익</strong>이 순자산에 더해집니다. 반대로 (rk_t)가 낮아 손실을 보면 순자산이 깎입니다. 이 메커니즘이 <strong>금융가속기의 핵심</strong>입니다. 산출이 좋고 자본수익률이 높으면 기업가 부가 늘어 향후 더 투자할 여력이 생기고, 불황으로 자본수익률이 낮으면 순자산이 줄어 투자능력이 약화됩니다. 특히 (rk_t)가 높고 인플레이션이 약간 올라간 상태에서는 부채 실질부담이 줄어 기업가가 실질이익을 더 가져가는 반면, (rk_t) 저조와 디플레이션 상황에서는 부채 부담이 실질적으로 늘어나 순자산에 이중 타격을 줄 수 있습니다. 본 식에서 ()나 (_i) 등의 매개로 (rk_t)가 결국 (n_t)에 영향을 미치게 연결되어 있고, 그 결과는 다시 <strong>레버리지 증가(또는 감소)</strong> 및 <strong>위험스프레드 변화</strong>로 이어져 실물경기에 피드백되는 순환이 형성됩니다.</p></li>
+<li><p>(e^n_t): <strong>순자산 쇼크</strong>로, 외생적으로 기업가 부에 영향을 주는 요인입니다. 이는 0에 수렴하는 충격의 편차로 생각할 수 있으며, 예를 들어 갑작스런 <strong>금융자산 가치 하락</strong>이나 <strong>기업가부문 부채탕감/지원</strong> 같은 정책 등이 모형에서 랜덤하게 <strong>순자산 수준을 변화</strong>시키는 역할을 합니다. (e^n_t)가 음(-)이면 아무런 실물변화 없이도 기업가 순자산이 증발하는 <strong>금융위기 충격</strong>처럼 작용하여 경기침체를 야기할 수 있고, 양(+)이면 반대로 금융여건이 개선되는 효과를 냅니다.</p></li>
+</ul>
+<p>전체적으로 이 순자산 진화식은 <strong>기업가 대차대조표의 축소/확대를 동태적으로 묘사</strong>하며, <strong>금융부분의 자체 동학(dynamics)</strong>을 결정합니다. 정상상태에서는 (rk = r^n - ) 정도로 맞춰져 있어 순자산이 경향적으로 유지되지만, 충격이 발생하면 (rk)와 실질금리 차이가 벌어져 (n<em>t)에 누적적인 변화를 줍니다. 예를 들어 <strong>금융위기적 상황</strong>을 생각해보면, 자본가격 급락으로 (rk_t)가 크게 떨어지고 동시에 물가는 하락(디플레이션)하여 실질부채코스트 (r^n</em>{t-1}-t)가 높아진다면, 괄호 안 (rk_t - (r^n*{t-1}-_t))는 큰 폭의 음(-)의 값이 되어 기업가 순자산을 크게 까먹을 것입니다. 반면, <strong>호황</strong>으로 (rk_t)가 높고 인플레이션도 안정적이면 기업가는 초과수익을 얻어 순자산이 빠르게 회복되겠죠. 이 모든 효과가 () (생존율)로 적절히 조절되어 반영됩니다. ()이 의미하는 것은 기업가 순자산 증감의 대부분이 <strong>생존한 기존 기업가의 몫으로 남고</strong>, 3% 정도는 퇴장 기업가의 소비로 빠져나간다는 것입니다. 그래서 순자산 증가는 한 번에 다 쌓이지 않고 일부 소실되며 (이 부분은 앞의 (ce_t = n_t)와 연계), 순자산 감소도 완전히 반영되진 않고 약간 완충되는 면이 있습니다. 하지만 ()가 1에 매우 가까워 <strong>순자산 충격의 자기 지속성</strong>이 상당함을 보여주는데, 이는 금융 충격이 <strong>장기적인 경기 여파</strong>를 가질 수 있음을 시사합니다.</p>
+</section>
+<section id="통화정책반응-함수-monetary-policy-rule" class="level3">
+<h3 class="anchored" data-anchor-id="통화정책반응-함수-monetary-policy-rule">12. 통화정책반응 함수 (Monetary Policy Rule)</h3>
+<p><strong>방정식:</strong> (r^n<em>t = , r^n</em>{t-1} + (1-)( _t + _y y_t + _f , lev_t ) + s^{rn} e^{tamp}_t.)<br>
+이 식은 중앙은행이 어떻게 정책금리 (r^n_t)를 결정하는지를 나타내는 <strong>이자율 규칙</strong> (Taylor rule, 테일러 준칙)의 확장 형태입니다. ()는 <strong>이자율 결정의 관성(이월) 정도</strong>이며, 나머지 괄호 안은 <strong>정책반응 함수</strong>입니다. 수치를 대입하면 (= 0.9)로 매우 높아, <strong>이전 분기의 금리를 90% 비중으로 이어받고</strong>, 나머지 10%만 새로운 목표치로 조정하는 <strong>강한 이자율 관성(smoothing)</strong>을 보여줍니다. 이는 중앙은행이 금리를 급격히 변동시키지 않고 점진적으로 움직이는 관찰과 부합합니다. 괄호 안을 보면, 세 가지 요소에 반응하도록 되어 있습니다:</p>
+<ul>
+<li><p>(_t) (인플레이션 편차): 계수 (= 1.5)로, 중앙은행이 <strong>목표 인플레이션 대비 현재 인플레이션의 괴리</strong>에 강하게 반응함을 의미합니다. 1.5라는 값은 일반적으로 알려진 <strong>테일러 원칙</strong>(인플레이션 1% 상승 시 명목금리를 1%보다 더 올려 실질금리를 상승시키는 원칙)을 만족하여, 중앙은행이 물가 안정을 최우선으로 한다는 신호입니다.</p></li>
+<li><p>(y_t) (산출갭): 계수 (_y = 0.5)로, 중앙은행이 <strong>경기상황(산출갭)</strong>에도 완만하게 반응함을 의미합니다. 산출갭 1%p 증가(경제 과열) 시 약 0.5%p 금리를 높이는 식으로, 경기 부양/냉각 목적의 조절입니다.</p></li>
+<li><p>(lev_t) (레버리지): 계수 (_f = 0.5)로 설정되어 있는데, 이는 <strong>중앙은행이 금융상황(레버리지 수준)</strong>에도 반응하는 것을 보여줍니다. 일반적인 테일러룰에는 없는 항목으로, <strong>거시건전성</strong>을 염두에 둔 확장입니다. (lev_t = q_t + k_t - n_t)는 <strong>기업가 부문의 부채 의존도</strong> 혹은 <strong>금융취약성 지표</strong>라 할 수 있습니다. 이 항의 계수가 양수 0.5인 것은, 예컨대 <strong>레버리지가 높이 상승</strong>(기업가 부채 누증)하면 중앙은행이 금리를 추가로 0.5*Δlev 만큼 더 올려 거품 축적을 억제하려 한다는 의미입니다. 반대로 금융 디레버리징으로 레버리지가 크게 떨어진 상황에선, 이를 보완하기 위해 금리를 낮추는 방향으로 작용합니다. 모형 설명에 “doesn’t include finance stability in monetary rule”이라고 되어 있으나, 실제 파라미터는 (_f = 0.5)로 되어 있어 <strong>일정 정도 금융안정에 기울인 정책</strong>을 모형화한 것으로 보입니다. 다만 그 크기가 0.5로 인플레이션 반응과 동등하게 설정된 점은, 금융 변수를 완만히 고려하기 시작한 중앙은행의 행동을 반영한 것이라 해석할 수 있습니다. (만약 (_f = 0)였다면 전통적 테일러룰이 됩니다.)</p></li>
+</ul>
+<p>마지막으로 (s^{rn} e^{tamp}_t)는 <strong>통화정책 충격</strong>입니다. (e^{tamp}_t)는 정책 당국의 <strong>비정칙적 금리조정</strong>이나 예기치 못한 통화정책 변동을 나타내고, (s^{rn}=0.5)는 그 표준편차 크기 정도입니다. 이 항이 양(+)이면 예를 들어 기준금리를 갑자기 예상보다 더 올린 깜짝 긴축, 음(-)이면 예상보다 더 내린 깜짝 완화로 볼 수 있습니다.</p>
+<p>요약하면 이 통화정책 방정식은 <strong>중앙은행이 인플레이션을 우선시하되 산출갭과 금융상황도 고려하여 점진적으로 금리를 조정</strong>하는 정책반응을 형식화한 것입니다. 예를 들어, <strong>인플레이션이 목표보다 높고 경제도 과열되고 있으며 거품까지 낀 상황</strong>이라면 (_t), (y_t), (lev_t) 모두 양(+)일 것이고, 이 식에 의해 상당히 큰 폭으로 금리를 인상하는 결과가 나옵니다. 반대로 <strong>심각한 경기침체와 디플레이션 위험, 그리고 금융위기(레버리지 축소)</strong> 상황에서는 셋 다 음(-)이어서 금리를 큰 폭 인하(혹은 0에 수렴)하는 방향을 제시합니다. (= 0.9) 때문에 이러한 조정은 단계적으로 이뤄지지만, 장기적으로는 지정된 반응계수 비율만큼 금리가 움직여 <strong>물가와 생산, 금융을 안정화</strong>시키려 합니다. 이 규칙을 통해 모형에서 <strong>명목금리 (r^n_t)</strong>가 내생적으로 결정되며, 이는 다시 Euler 방정식을 통해 <strong>실질이자율 경로</strong>를 좌우하고, 또한 기업가 차입비용에도 영향을 줍니다. 실제 경제에 대입하면 이 식은 <strong>테일러 준칙</strong>이 잘 작동하던 정상시기의 정책 행동을 묘사하지만, 뒤에 논의할 <strong>자연이자율 급락 &amp; ZLB 시나리오</strong>에서는 중앙은행이 이 식대로 행동하기 어려워지는 특수한 상황이 나타납니다.</p>
+</section>
+<section id="생산성-충격-productivity-shock-process" class="level3">
+<h3 class="anchored" data-anchor-id="생산성-충격-productivity-shock-process">13. 생산성 충격 (Productivity Shock Process)</h3>
+<p><strong>방정식:</strong> (a*t = _a , a*{t-1} + s_a e^a_t.)<br>
+이 식은 총요소생산성(TFP) 수준 (a_t)가 어떻게 움직이는지를 나타내는 <strong>외생적 충격 프로세스</strong>입니다. (_a)는 <strong>생산성 충격의 자기상관(지속성)</strong>으로, 값이 0.95로 높게 설정되어 있어 <strong>생산성 수준이 상당히 지속적으로 유지</strong>됨을 보여줍니다. 이는 기술충격이 발생하면 천천히 소멸하고 경제에 <strong>장기적인 영향</strong>을 줄 수 있음을 의미합니다. (s_a e^a_t)는 새로운 <strong>생산성 충격</strong>으로, (e^a_t)는 평균 0의 랜덤 충격이고 (s_a)는 그 표준편차(영향력 크기)입니다. (s_a = 1)로 주어져 있지만, 이 값은 단위 조정(scale)일 뿐 실제 모형에서는 충격 분산에 맞게 조정됩니다. 예를 들어 (e^a_t = 0.01) (1%p 임의 상승)이라면 (a_t)가 1% 상승합니다. 이 충격은 생산함수를 통해 즉각 산출 (y_t)을 올리고, 산출 증가 -&gt; 물가하락 압력(필립스 곡선) -&gt; 중앙은행 금리인하 등 여러 경로로 영향을 줍니다. 또한 생산성 상승은 기업의 생산비용을 떨어뜨려 <strong>마크업 (x_t)를 일정 수준 조정</strong>하게 할 것이고, 실질임금과 여타 변수에도 파급됩니다. <strong>요약:</strong> (a_t)는 <strong>공급측 요인</strong>인 기술/생산성의 충격을 나타내며, 고도로 지속적(AR(1) 계수 0.95)이라서 <strong>경제에 항구적 수준효과</strong>(기술진보 축적)까지 줄 수 있는 요소로 취급됩니다.</p>
+</section>
+<section id="정부지출-충격-government-spending-shock-process" class="level3">
+<h3 class="anchored" data-anchor-id="정부지출-충격-government-spending-shock-process">14. 정부지출 충격 (Government Spending Shock Process)</h3>
+<p><strong>방정식:</strong> (g*t = _g , g*{t-1} + s_g e^g_t.)<br>
+이 식은 <strong>정부지출 (g_t)</strong>가 외생적으로 움직이는 경로를 보여줍니다. (_g = 0.95)로 높은 지속성을 가지며, (s_g = 1) 크기의 랜덤충격 (e^g_t)에 반응합니다. 정부지출 증감은 자원제약식에서 (g_y )의 비중으로 산출에 직접 기여하는 <strong>총수요 충격</strong>입니다. 예를 들어 (e^g_t)가 양(+)이면 정부지출이 평소보다 늘어나 (g_t)↑, 이는 곧바로 (y_t)를 증가시킵니다(정부지출乘数효과는 1차 선형 모형에서는 1보다 작거나 같지만 기본적으로 긍정). 산출갭 증가 -&gt; 인플레이션 상승 -&gt; 금리 인상 등 수요 충격에 준하는 파급효과가 나타납니다. (_g = 0.95)이므로 정부지출 충격이 발생하면 여러 기간에 걸쳐 지출 수준이 서서히 이전 평균으로 돌아옵니다. 실제 정책으로 보면, 일시적인 재정지출 확대나 축소가 경제에 미치는 효과를 포착하기 위한 구성입니다. BGG 모형에서는 정부지출이 금융시장과 직접적 연관은 없지만, 산출과 인플레이션을 바꾸어 통화정책 대응, 실질이자율, 순자산 경로 등에 2차적 영향을 줄 수 있습니다.</p>
+</section>
+<section id="레버리지-정의-leverage-definition" class="level3">
+<h3 class="anchored" data-anchor-id="레버리지-정의-leverage-definition">15. 레버리지 정의 (Leverage Definition)</h3>
+<p><strong>방정식:</strong> (lev_t = q_t + k_t - n_t.)<br>
+이 정의는 앞서 여러 번 언급한 <strong>레버리지(부채 레버리지)</strong>의 정확한 의미를 수식으로 보여줍니다. (lev_t)는 기업가 부문의 <strong>총자산 대비 자기자본의 부족분</strong>으로, (q_t + k_t)는 <strong>기업가가 보유한 총자산의 (로그) 가치</strong>이고 (n_t)는 <strong>자기자본(순자산)</strong>입니다. 따라서 (q_t + k_t - n_t)는 자산에서 자기자본을 뺀 나머지, 즉 <strong>타인자본(부채)</strong>의 대략적인 (로그) 크기를 반영합니다. 사실 레버리지란 <strong>총자산/자기자본 비율</strong>을 의미하지만, 로그 선형화된 상황에서는 비율의 로그가 차이로 근사될 수 있어서 단순차 (q_t + k_t - n_t)로 표현하고 있습니다. (lev_t)가 상승하면 (자산 가치 대비 부채가 상대적으로 늘면) <strong>재무레버리지 악화</strong>를 뜻하고, (lev_t) 하락은 <strong>레버리지 축소(디레버리지)</strong>를 뜻합니다. 이 변수는 모형에서 <strong>위험스프레드</strong> 결정식에 이미 -로 나타나 있고, 통화정책반응 함수에도 직접 등장하므로 매우 중요합니다. 레버리지는 <strong>금융위험 누적정도</strong>를 나타내는 지표로, 예컨대 자산가격 붕괴로 (q_t)가 급락하거나 투자손실로 (n_t)가 급감하면 (lev_t)가 급등하고 이는 곧 신용경색과 투자위축으로 연결됩니다. 반대로 자산 가격 상승 또는 이익 증가로 자기자본이 두터워지면 (lev_t)가 낮아져 금융위험이 줄어듭니다. 이렇듯 (lev_t)는 <strong>금융상황의 함축 요약</strong>이라 할 수 있으며, 모형에 명시적으로 포함됨으로써 <strong>금융안정 정책</strong>이나 <strong>자산시장 충격</strong>을 분석할 수 있게 해줍니다.</p>
+</section>
+<section id="선호소비절약-성향-충격-preference-shock-process" class="level3">
+<h3 class="anchored" data-anchor-id="선호소비절약-성향-충격-preference-shock-process">16. 선호(소비절약 성향) 충격 (Preference Shock Process)</h3>
+<p><strong>방정식:</strong> (z*t = _z , z*{t-1}.)<br>
+(z_t)는 <strong>가계의 시간선호나 소비성향을 나타내는 충격</strong>으로 해석됩니다. (_z = 0.5)이므로 꽤 빠르게 평균으로 회귀하는 충격입니다. 특이하게도 이 식에는 새로운 충격항 (e^z_t)가 명시되어 있지 않은데, 이는 (z_t) 자체보다는 곧 나오는 자연이자율 식에서 (z_t)의 움직임을 활용하기 위해 최소한의 AR 구조만 준 것으로 보입니다. 실제로 (z_t)는 Euler 방정식 등에는 직접 등장하지 않지만, <strong>자연이자율의 변동 요인</strong>으로 쓰입니다. 경제적 의미로 (z_t)가 양(+)이면 가계의 <strong>소비성향이 높아지는</strong> (혹은 할인율이 낮아져 미래대비 현재 소비를 선호하는) 충격이고, (z_t)가 음(-)이면 <strong>소비를 억제하고 저축을 선호</strong>하는 충격이라 볼 수 있습니다. 예를 들어 갑작스런 위험회피 성향 증대로 사람들이 소비를 줄이고자 한다면 (z_t)가 큰 음(-)으로 움직일 수 있습니다. 이 자체는 내생적으로 Euler 식에 영향을 줄 텐데, 본 모형에서는 직접 Euler에 등장시키는 대신, <strong>이런 선호변화가 나타난 상황에서 자연실질이자율이 어떻게 변하는가</strong>로 간접 나타내는 접근을 취하고 있습니다.</p>
+</section>
+<section id="자연이자율-프로세스-natural-rate-process" class="level3">
+<h3 class="anchored" data-anchor-id="자연이자율-프로세스-natural-rate-process">17. 자연이자율 프로세스 (Natural Rate Process)</h3>
+<p><strong>방정식:</strong> (nr<em>t = , nr</em>{t-1} + (1-) ( (1-a)a_t + (1-_z) z_t ) + e^{tar}_t.)<br>
+이 식은 <strong>자연실질이자율 (nr_t)</strong>가 시간에 따라 어떻게 움직이는지를 나타냅니다. 자연이자율은 앞서 설명했듯이 <strong>경기 균형 상태에서의 실질금리</strong>로, 경제 내부 요인에 의해 결정되는 일종의 잠재금리입니다. 위 식은 자연이자율이 <strong>TFP 충격</strong>과 <strong>선호충격</strong>의 영향을 받으며, 자체적으로 ( = 0.9)라는 높은 지속성을 가진 AR 과정을 따른다고 가정합니다. 자세히 보면:</p>
+<ul>
+<li><p>( nr*{t-1}): 전기의 자연이자율에 0.9의 비중을 두어 <strong>자연이자율 자체의 관성</strong>을 반영했습니다. 자연이자율이 한번 내려가면 꽤 오래 낮은 상태로 지속될 수 있음을 의미하는 설정입니다.</p></li>
+<li><p>((1-_{nr})( (1-_a)a_t + (1-_z) z_t )): 이는 자연이자율의 <strong>장기균형 수준</strong>이 생산성 (a_t)와 선호요인 (z_t)의 함수임을 보여줍니다. (_a = 0.95), (_z = 0.5)이므로 (1-_a = 0.05), (1-_z = 0.5. 결과적으로 이 항은 (0.1 * (0.05 a_t + 0.5 z_t)) = (0.005 a_t + 0.05 z_t)와 같습니다. 이는 <strong>생산성 충격</strong>과 <strong>선호충격</strong>이 자연이자율에 미치는 방향을 결정합니다. 부호는 둘 다 양(+)이므로:</p>
+<ul>
+<li>(a_t) (생산성 상승)이 <strong>자연이자율을 올리는 요인</strong>입니다. 생산성이 높아져 경제가 강해지면, 잠재적 산출이 늘어나고 소비·투자 수요도 함께 늘어나 자연실질금리를 밀어올리는 것으로 이해할 수 있습니다. (a_t) 1%p↑ 당 (nr_t) 약 0.005 (0.5bp)↑로 반영됩니다.</li>
+<li>(z_t) (현재소비 성향↑)이 <strong>자연이자율을 올리는 요인</strong>입니다. 선호충격 (z_t)는, 양(+)일 때 사람들이 현재 소비를 더 선호하므로 투자나 저축이 줄어 잠재균형에서 금리가 상승하는 효과를 냅니다. 반대로 (z_t)가 음(-)이면 (미래 대비 현재소비 기피, 저축선호↑) 자연금리를 끌어내리는 요인이 됩니다. (z_t) 1%p 변화 당 (nr_t) 약 0.05 (5bp) 변동이 생깁니다. (z_t)의 영향이 (a_t)보다 10배 정도 큰데, 이는 <strong>선호(수요) 요인이 자연금리 변동에 주요</strong>하다는 모델링입니다.</li>
+</ul></li>
+<li><p>(e^{tar}<em>t): <strong>자연이자율 자체의 추가적인 외생충격</strong>입니다. (tar)는 “target rate” 느낌이지만, 여기서는 모델링 편의를 위해 넣은 순수 자연이자율 교란항으로 보면 됩니다. (</em>{nr})이 높기에 (e^{tar}_t) 충격이 발생하면 자연이자율이 상당 기간 지속적으로 바뀌는 효과를 냅니다.</p></li>
+</ul>
+<p>이 자연이자율 프로세스는 특히 <strong>유동성 함정</strong>이나 <strong>ZLB 상황</strong>을 분석할 때 핵심적입니다. 왜냐하면 자연이자율이 큰 폭으로 하락하면, 중앙은행이 명목금리를 아무리 0 근처로 내려도 실질금리가 여전히 자연수준보다 높아져 <strong>심각한 수요부족과 디플레이션 압력</strong>을 초래하기 때문입니다. 여기서는 (z*t) 같은 <strong>선호 충격</strong> (예: <strong>소비절약성향 급변</strong> 또는 <strong>위험회피심리 급변</strong>)이 그런 역할을 할 수 있습니다. (=0.9)이므로 한 번 자연이자율이 내려가면 천천히 회복되며, 이 기간 동안 통화정책은 어려움에 처할 수 있습니다. 밑에서 구체적으로 다루겠지만, <strong>자연이자율의 음(-)의 충격</strong>은 모형 내에서 가계가 갑자기 소비를 줄이고 싶어하거나 투자수요가 급감하는 환경을 뜻하며, 이를 상쇄하지 못하면 경제가 침체합니다. 이 식은 바로 그런 <strong>Wicksellian 금리</strong> 개념을 공식화한 것으로, <strong>실물충격들이 균형이자율을 어떻게 움직이는지</strong>를 제시합니다.</p>
+</section>
+<section id="측정-방정식들-measurement-equations" class="level3">
+<h3 class="anchored" data-anchor-id="측정-방정식들-measurement-equations">18. 측정 방정식들 (Measurement Equations)</h3>
+<p>마지막으로, 모델 변수를 실제 <strong>관측가능한 자료와 연결</strong>시켜주는 측정식들이 있습니다:</p>
+<ul>
+<li><p><strong>연율 환산 정책금리:</strong> (rAnn_t = rAnn^{SS} + 4 , r^n_t.)<br>
+여기서 (rAnn_t)는 <strong>연간(연율) 기준의 명목 단기금리</strong>입니다. (rAnn^{SS})는 그 <strong>정상상태 값</strong>인데, (100*((1/)^4 - 1))로 주어져 있습니다. (= 0.99)이면 ((1/0.99)^4 - 1 ), 즉 약 4.07%입니다. 이 값에 100을 곱했으므로 (rAnn^{SS} %) (연간)입니다. 다시 식을 보면, (r^n_t)는 분기 기준 금리의 편차(또는 실질금리 편차)인데 여기에 4를 곱하고 정상상태 연간금리를 더해줌으로써, 실제 자료의 연율 금리에 맞춥니다. 예를 들어 (r^n_t = 0)인 모형 상태는 연 4.07%의 정책금리에 해당합니다. (r^n_t = -0.01) (1%p 낮은 수준)이면 연율 4.07% - 4% = 0.07%, 즉 연 0.07%로 매우 낮은 금리가 됩니다. 이렇듯 연결해두면 모형의 결과를 중앙은행이 발표하는 기준금리나 시중단기금리 데이터와 비교할 수 있습니다.</p></li>
+<li><p><strong>연율 환산 인플레이션:</strong> (_t = 4 , _t.)<br>
+(_t)는 연간 인플레이션 (예: CPI 연율 상승률)이고, (_t)는 분기 인플레이션입니다. 4배를 곱해주면 단순히 분기율을 연율로 환산한 것입니다. 정상상태에서 (_t = 0) (물가안정 목표)라면 (_t = 0)로 0% 인플레이션이 기준이며, 만약 (_t = 0.005) (분기 0.5% 상승)이라면 (_t = 0.02)로 연 2% 인플레이션이 됩니다.</p></li>
+<li><p><strong>연율 환산 자연이자율:</strong> (rnAnn_t = rAnn^{SS} + 4 , nr_t.)<br>
+이것은 자연실질이자율 (nr_t)를 연율 명목금리 기준으로 환산한 것입니다. (nr_t)는 실질금리격 차이인데, 거기에 연환산하고 정상상태 명목금리 (4.07%)를 더해줍니다. 예컨대 (nr_t)가 -0.01이라면 자연실질금리가 -1%p 정도 낮다는 뜻이고, (rnAnn_t) = 4.07% - 4% = 0.07%로, 현재 경제가 균형을 이루려면 명목금리가 0.07% 정도 되어야 함을 의미합니다. 중앙은행 입장에서 자연금리 추정치와 실제 금리를 비교하여 정책 스탠스를 파악하는데, 이 모형에서는 그 부분을 묘사합니다.</p></li>
+</ul>
+<p>이러한 측정식들은 모형의 이론적인 변수를 실제 데이터 (금리, 인플레이션 등)와 직접 연결하기 위한 것으로, 모형의 <strong>추정 혹은 검증 단계</strong>에 활용됩니다. 단순히 단위 변환 역할이므로 경제적 메커니즘에 추가되는 내용은 없습니다.</p>
+<hr>
+<p>以上各 방정식을 통해 모형의 구조를 모두 살펴보았습니다. 다음 절에서는 이러한 방정식들이 <strong>어떻게 맞물려 작동</strong>하는지를 종합적으로 설명하고, 특히 <strong>자연이자율 충격</strong>과 <strong>제로금리 하한(ZLB) 및 Forward Guidance</strong> 상황에서 모형이 어떤 동태적 반응을 보이는지 상세히 다루겠습니다.</p>
+</section>
+</section>
+<section id="모형의-작동-메커니즘-overall-mechanism-of-the-model" class="level2">
+<h2 class="anchored" data-anchor-id="모형의-작동-메커니즘-overall-mechanism-of-the-model">모형의 작동 메커니즘 (Overall Mechanism of the Model)</h2>
+<p>이 모형은 <strong>신케인즈 경기변동 메커니즘</strong>과 <strong>금융가속기 메커니즘</strong>이 결합되어 있습니다. 간략히 요약하면, <strong>총수요와 총공급의 상호작용</strong>으로 산출갭과 인플레이션이 결정되고, 중앙은행이 금리를 조절하여 이를 안정화하려고 하지만, 동시에 <strong>금융부문의 상태(기업가 순자산과 레버리지)</strong>가 투자와 산출에 영향을 미쳐 충격의 효과를 <strong>증폭</strong>시키는 체계입니다. 평상시(작은 충격 하)에는 중앙은행의 테일러룰이 비교적 잘 작동해서 인플레이션과 산출갭을 적절히 조정하지만, <strong>큰 금융충격이나 자연이자율 변화</strong>에는 정책 여력이 제약될 수 있으며, 이때 <strong>금융가속기</strong>가 경기 변동성을 크게 키울 수 있습니다. 메커니즘을 단계별로 정리해 보겠습니다:</p>
+<ul>
+<li><p><strong>(1) 가계측: Euler 방정식과 자연이자율 역할)</strong> – 가계는 금리와 기대인플레이션에 반응해 소비를 조절합니다. 만약 경제에 <strong>수요를 감소시키는 충격</strong>이 오면 (예: 선호충격 (z*t) 음(-) 또는 정부지출 감소), <strong>자연실질이자율 (nr_t)</strong>가 떨어집니다. 그러면 균형을 맞추기 위해서는 실제 실질금리 (r^n_t - )도 내려와야 하지만, 중앙은행이 금리를 충분히 낮추지 못하거나 인플레이션이 충분히 올라주지 않으면 (특히 ZLB 근처에서는 금리인하 한계) Euler 방정식에 의해 <strong>현재소비 (c_t)</strong>가 크게 위축됩니다. 이는 곧 산출갭 (y_t)의 감소로 이어지죠. 반대로 수요가 과열되는 충격(예: 정부지출↑, 선호충격 (z_t) 양(+))에는 자연금리가 상승하고, 금리가 그만큼 못 따라올라가면 (c_t)가 과열되어 (y_t)↑ 압력을 줍니다. <strong>자연이자율</strong>은 이렇게 <strong>수요충격의 크기와 지속성</strong>을 대변하는데, 중앙은행은 이를 쫓아 정책금리를 조정함으로써 (c_t)와 (y_t) 변동을 완화하려 합니다.</p></li>
+<li><p><strong>(2) 기업 및 가격측: 필립스 곡선과 마크업 (x_t) 역할)</strong> – 산출갭 (y_t)의 변화는 곧 <strong>노동수요와 마진</strong>에 영향을 줍니다. 경제가 침체되어 (y_t)가 떨어지면 기업들은 생산을 줄이고 노동 (h_t)를 감축하며, 수요 부진으로 가격을 공격적으로 올리지 못해 <strong>마크업 (x_t)</strong>가 높아지는 경향이 있습니다 (한계비용이 내려가거나 수요 부족으로 낮은 가격인상을 통해 이윤을 지키려는 행동). 이때 필립스 곡선에 의해 **인플레이션 (_t)**가 하락하게 됩니다 (디플레이션 압력). 반대로 경제가 과열되어 (y_t)↑, (h_t)↑이면 한계비용이 올라가서 마크업 (x_t)는 낮아지고, 기업들은 가격을 올리기 쉬운 환경이 되어 (_t)가 상승합니다. 따라서 (y_t) 증감 -&gt; (x_t) 반대로 -&gt; (_t) 증감의 연결이 생깁니다. 중앙은행은 이를 감안하여 금리 (r^n_t)를 조정하는데, 예를 들어 인플레이션이 목표보다 높으면 금리를 인상하여 수요를 누르고(실질금리↑ -&gt; (c_t)↓), 낮으면 금리인하로 부양하려 합니다. 이 <strong>통화정책 피드백</strong>은 테일러룰에 의해 형성되어, (_t)와 (y_t)의 지나친 변동을 억제하는 방향으로 작동합니다.</p></li>
+<li><p><strong>(3) 금융부문: 순자산 (n_t)와 위험스프레드 (rk - (r^n-)) 역할</strong> – 여기서 BGG 금융가속기가 개입합니다. 예를 들어 <strong>경기침체 초기</strong>를 가정해 보겠습니다. (y<em>t)↓에 따라 기업 수익이 줄고 자본가격 (q_t)도 하락할 것입니다. 그러면 기업가의 <strong>자본수익률 (rk_t)</strong>가 낮아지고, 심지어 디플레이션이 발생하면 실질부채이자 부담은 오히려 늘어나 (rk_t &lt; (r^n</em>{t-1}-t))가 될 수 있습니다. 순자산 진화식에 따르면 이런 상황에서 기업가 <strong>순자산 (n_t)</strong>는 크게 감소합니다. 한편 경기침체는 대개 금리인하로 대응하지만, <strong>만일 금리 인하가 한계에 부딪히거나(0% 하한)</strong> 혹은 금리를 내려도 디플레이션으로 실질금리가 충분히 낮아지지 않는다면, 실물경기는 더 악화되고 (n_t) 감소 폭은 더 커집니다. (n_t)가 줄면 레버리지 (lev_t)는 상승하여 <strong>금융위험</strong>이 커지고, 위험스프레드 식에 의해 **(rk*{t+1}) (미래 투자에 대한 요구수익률)<strong>가 상승합니다. 이는 투자자들이 </strong>투자에 더욱 신중<strong>해짐을 뜻합니다. 구체적으로 말하면, 은행 등 대출자가 볼 때 기업가의 재무건전성이 나빠졌으니 대출금리에 가산금리를 더 붙이거나 대출을 꺼리게 됩니다. 결과적으로 기업가들은 투자비용 상승에 직면하고 실제 </strong>투자 (i_t)<strong>를 크게 줄일 수밖에 없습니다. 투자 감소는 다시 </strong>자본수요 축소 -&gt; 자본가격 (q_t) 추가 하락 -&gt; 기업가 순자산 악화<strong>로 피드백됩니다. 이 일련의 과정이 </strong>금융가속기: “불황 시 악순환, 호황 시 선순환”<strong>이며, 경기침체를 더욱 심화시키고 경기호황을 더욱 부추기는 힘으로 작용합니다. 모형에서는 작은 () (0.2)와 () (0.04) 등으로 이 효과가 천천히 진행되지만, 충격이 지속되면 상당한 </strong>진폭 증폭과 지속성 증가<strong>를 가져옵니다. 금융가속기가 없다면 예컨대 총수요 충격의 영향으로 (y_t)가 1분기만 -1% 줄고 끝날 것을, 금융가속기 존재 시에는 -1% → -1.5% → -1% → -0.5% 이런 식으로 </strong>더 크게, 더 오래<strong> 지속시키는 양상입니다. 이는 모형 내에서 기업가 순자산 (n_t)라는 </strong>상태변수**가 생김으로써 발생하는 중요한 동태적 특징입니다.</p></li>
+<li><p><strong>(4) 정책 및 기대역할: Forward Guidance 효과)</strong> – 중앙은행이 충격에 대응해 금리를 조정하면 Euler 방정식과 필립스 곡선을 통해 향후 (c<em>{t+1}, ) 등에 대한 <strong>기대</strong>를 변경시킵니다. 특히 <strong>Forward Guidance(선제적 안내)</strong>란 중앙은행이 미래의 금리경로에 대한 신호를 주어 <strong>민간의 기대를 조작</strong>함으로써 현재 경제에 영향을 주는 정책입니다. 모형의 Euler 방정식을 다시 보면 (c</em>t = c<em>{t+1} - (r^n</em>t - - nr<em>t))로 정리할 수 있는데, 여기서 (c</em>{t+1})나 ()에 대한 기대가 올라가거나, 미래 금리 경로 기대 (r^n_t)가 낮아지면 현재 소비 (c_t)를 높이는 힘이 생깁니다. 예를 들어 충격으로 인해 자연실질금리가 크게 떨어져 <strong>ZLB 상황</strong>이 온다면 (즉 필요한 금리는 음수인데 0으로 묶여있는 상황), 그냥 두면 현재 소비와 산출이 크게 위축됩니다. 그러나 중앙은행이 <strong>“경기가 회복돼도 한동안 금리를 0에 묶어두겠다”</strong>고 약속(Forward Guidance)하면, 민간은 미래 어느 시점에 원래라면 금리가 올라야 할 때도 낮은 금리가 유지되리라고 예상하게 됩니다. 이는 <strong>미래의 실질이자율 경로를 낮추는 효과</strong>를 가져오고, Euler 방정식에 의해 <strong>현재 소비를 증가</strong>시키는 요인으로 작용합니다. 또한 중앙은행이 향후 완화적 정책을 시사하면 **미래의 인플레이션 기대 ()**도 높아질 수 있습니다 (왜냐하면 중앙은행이 과열을 용인할 거라는 시그널로 이해). 그러면 현재 실질금리 (r^n*t - )가 더 떨어지는 효과가 있어 역시 소비와 투자에 긍정적 영향을 줍니다. 요컨대 Forward Guidance는 <strong>기대 경로 조정을 통해 현재의 총수요를 자극</strong>하는 수단인 것입니다. 다만 이러한 효과는 모형에서 가정한 완전정보, 합리적 기대 하에서 상당히 크게 나타날 수 있는데, 문헌에서는 이를 <strong>Forward Guidance Puzzle</strong>이라고도 합니다 (먼 미래의 금리 약속도 현재 소비를 비현실적으로 크게 늘릴 수 있다는 문제). 현실적으로는 민간의 기대가 완전하지 않거나 할인되기 때문에 어느 정도 제약은 있지만, **질적인 효과**는 분명합니다. 후술할 구체 시나리오에서 확인하겠습니다.</p></li>
+<li><p><strong>(5) 거시건전성 정책의 역할)</strong> – 이 모형에는 테일러룰에 (_f lev_t) 항이 포함되어 있어 <strong>중앙은행이 레버리지 동태를 주시하고 개입</strong>하는 구조입니다. 예를 들어 자산가격 상승 등으로 민간 부채가 과도하게 늘어 레버리지가 상승하는 국면에서는 중앙은행이 금리를 추가로 인상하여 거품을 억제하려고 합니다. 이때 금리인상은 단기에 소비와 투자를 둔화시켜 산출갭을 줄이고 물가를 낮출 수 있지만, 금융위험 축적을 막음으로써 향후 <strong>더 큰 버블 붕괴</strong>를 예방하는 의도가 있습니다. 반대로 위기 시에는 레버리지 급락((lev_t)↓)에 대응해 금리를 평소보다 더 낮춰주는 것이 금융완화에 도움이 됩니다. 그러나 금리 하나로 물가안정과 금융안정을 동시에 달성하기는 어려운 트레이드오프도 있습니다. (_f = 0.5)라는 임의의 가중치를 통해 모형에서는 <strong>일정 정도만 금융안정에 기울이는</strong> 것으로 타협하고 있습니다. 예컨대 금융위기가 발생해 인플레이션은 낮고 산출갭도 마이너스지만 레버리지는 너무 높다면, (_t, y_t)는 금리인하를 요구하지만 (lev_t)는 금리인상을 요구하는 딜레마가 생깁니다. (_f)값에 따라 어느 쪽을 더 고려할지가 결정되고, 이 모형에서는 전자(경제활성화)에 더 방점을 두면서도 약간의 <strong>속도 조절</strong>을 하는 수준으로 볼 수 있습니다.</p></li>
+</ul>
+<p>이와 같이 모형의 다양한 요소들은 <strong>서로 연결</strong>되어 작동합니다. <strong>공급측 충격</strong>(생산성 (a_t))이 온다면 필립스곡선을 통해 물가에 직접 영향, 산출에 직접 영향, Euler를 통한 간접 영향 등 다경로로 파급되고, <strong>수요측 충격</strong>(정부지출 (g_t)나 선호 (z_t))은 자연이자율과 Euler를 통해 1차 영향, 이어 필립스곡선, 금융가속기 등을 거쳐 2차 3차 효과를 냅니다. <strong>금융측 충격</strong>(순자산 (e^n_t) 혹은 자산가격 변동)도 마찬가지로 투자경로와 소비경로에 모두 효과를 미쳐 경기변동을 만들어냅니다. 이제 이러한 메커니즘이 두 가지 중요한 시나리오 – <strong>(A) 자연이자율에 큰 음의 충격 발생</strong>, <strong>(B) 그 상황에서 중앙은행이 금리를 장기간 0으로 유지하는 선제지침 시행</strong> – 에서 구체적으로 어떻게 전개되는지 살펴보겠습니다.</p>
+<section id="자연이자율의-급락-충격-경기침체와-모형의-반응" class="level3">
+<h3 class="anchored" data-anchor-id="자연이자율의-급락-충격-경기침체와-모형의-반응">자연이자율의 급락 충격: 경기침체와 모형의 반응</h3>
+<p><strong>시나리오 (A):</strong> 어떤 요인으로 <strong>자연실질이자율 (nr_t)</strong>이 갑작스럽게 크게 하락하는 충격을 가정합시다. 이는 모형상으로는 (e^{tar}_t)가 큰 음(-) 또는 선호충격 (z_t)가 큰 음(-) 값으로 나타날 수 있습니다. 예를 들어 <strong>심각한 소비절약 성향 증가</strong>(가계가 갑자기 지출을 줄이고 저축을 늘리려는 성향, 공포심리)로 (z_t = -0.5) 정도의 충격이 왔다고 합시다. (_z = 0.5)이므로 이 충격은 상당 기간 지속되며, 자연이자율 식에서 (nr_t)를 하락시킵니다 (대략 (nr_t * (-0.5) = -0.025) 즉 2.5%p 정도 하락 일시적으로 가능). <strong>자연이자율의 급락</strong>은 말하자면 “경제의 중립금리가 마이너스로 떨어지는” 상황입니다. 이는 <strong>Wicksell의 견해</strong>로 보면 강한 <strong>과잉저축/수요부족</strong> 상태로, 중앙은행이 명목금리를 이만큼 내리지 않으면 경제가 불균형을 겪게 된다는 뜻입니다.</p>
+<p>모형에서 이 충격이 발생하면 연쇄적인 반응이 일어납니다:</p>
+<ul>
+<li><p><strong>초기 충격과 금리 제약:</strong> 자연이자율이 -2%까지 떨어졌다고 가정하죠 (연율 기준으론 -8%p 정도 필요). 그런데 중앙은행은 현실적으로 명목금리를 영(0)에 가까이밖에 내릴 수 없습니다. 모형의 테일러룰에 따르면 인플레이션이 떨어지고 산출갭이 크게 마이너스일 것이므로 금리를 낮추려 할 것입니다. 예컨대 (t) 목표대비 -2%, (y_t) -5% 상황이면 테일러룰 원하는 금리는 (<em>(-2) + 0.5</em>(-5) = -3.5)% (연율 -14%p에 해당!)일 수도 있습니다. 하지만 <strong>제로 하한(ZLB)</strong>이 존재하면 실제 (r^n_t)는 0까지만 내려갈 수 있습니다 (모형에는 명시적 ZLB 제약은 없지만, 시나리오 상정). 그러면 <strong>실질금리</strong> (r^n_t - )는 여전히 높게 남습니다. 인플레이션 기대 ()도 낮을 테니 실질금리는 상당히 상승한 상태가 됩니다. Euler 방정식으로 보면 이때 (r^n_t - - nr_t)는 크게 <strong>양(+)</strong>이어서 <strong>현재소비 (c_t)</strong>가 급격히 위축되는 결과를 초래합니다. 가계는 “금리가 충분히 낮지 않아 앞으로의 소비 대비 현재소비가 비싸졌다”고 느껴 소비를 미루고 저축을 늘립니다. 이로 인해 (c_t)가 큰 폭 감소하고, 자원제약에 따라 산출 (y_t) 역시 급격히 위축됩니다. 한편 금리가 0까지 떨어졌음에도 불구하고 디플레이션이 예상되므로 명목금리가 실질금리로 전환되는 효과(피셔 효과)까지 고려하면 실질금리는 오히려 상승한 셈입니다. 이것을 흔히 <strong>디플레이션 압력 하에서의 실질금리 상승 효과</strong>라고 하며, <strong>유동성 함정</strong>의 특징입니다. 중앙은행이 아무리 완화정책을 펴도 물가하락 기대 때문에 실질 차입비용은 내려가지 않는 함정에 빠진 것이죠.</p></li>
+<li><p><strong>실물경기 급락과 2차 파급:</strong> 산출갭이 크게 음(-)으로 벌어지면 (예: -5% 이상 침체), <strong>실업률 상승, 투자 급감</strong> 등이 발생합니다. 투자 (i<em>t)도 Euler류의 투자방정식(사실 q식, Euler식 결합)으로 보면 실질금리↑, 수요↓로 함께 크게 감소합니다. 자본가격 (q_t)가 떨어지고, 미래 수익 전망이 나빠 자본의 기대수익률 (rk</em>{t+1})도 낮아집니다. 동시에 현재의 (t)는 디플레이션(-)을 보이고, 마크업 (x_t)는 수요부진으로 상승해 있습니다. 이런 상황에서 기업가들은 보유자산 가치가 하락하고 사업수익도 악화되어, <strong>순자산 (n_t)</strong>에 큰 손실을 입습니다. 또한 디플레이션 때문에 과거에 빌린 부채의 실질부담이 늘어나 (n_t)를 추가로 깎아먹습니다 (BGG 모형의 <strong>부채 디플레이션 효과</strong>). (n_t) 감소 -&gt; 레버리지 (lev_t) 폭증 -&gt; 위험스프레드 확대((rk*{t+1}) 요구치↑) -&gt; <strong>신규 투자 위축</strong>이라는 <strong>금융가속기 악순환</strong>이 강하게 돌기 시작합니다. 예를 들어 순자산이 10% 증발하고 레버리지가 10%p 높아졌다면 (lev *10 = 2) %p의 추가 이자상승 효과, 이것이 투자위축으로 (y_t)를 더 떨어뜨리고, 다음 기에도 순자산이 더 줄어드는 연쇄입니다. <strong>은행 등 금융중개 역할</strong>도 경색되어, 기업이 아무리 낮은 정책금리를 적용받는다 해도 실제 대출금리는 위험프리미엄 때문에 크게 높아진다 볼 수 있습니다. 이런 환경에서는 통화정책 전파경로도 막혀버립니다. 즉, 금리를 0까지 내렸지만 민간에 체감되는 차입금리는 높아 “완화정책이 먹히지 않는” 현상이 발생합니다.</p></li>
+<li><p><strong>심화되는 디플레이션과 부채부담:</strong> 필립스 곡선에 의해 (x_t) 높은 상황에서 (_t)는 계속 하락압력을 받습니다. 실제 1930년대 대공황이나 1990년대 일본의 사례를 보면, 이러한 충격 하에서 <strong>디플레이션-경기침체-디플레이션 심화</strong>의 악순환이 나타납니다. 물가가 떨어지면 실질금리 하락 대신 오히려 상승, 실질부채 상승, 수요 더 위축… 모형에서도 (_t)가 음의 지속으로 가면 Euler식의 부담을 가중시킵니다. 중앙은행은 금리를 더 내릴 수 없으니 유일한 완충은 <strong>기대인플레이션을 높이는 것</strong>인데, 기대인플레이션이 높아지려면 민간이 미래 정책이 상당히 완화적으로 유지되어 경제를 과열시킬 거라 믿어야 합니다. 하지만 모두가 어렵다고 생각하면 오히려 <strong>기대 인플레이션이 더 낮아지는</strong> 악순환도 가능합니다 (자기실현적 디플레이션).</p></li>
+<li><p><strong>정리:</strong> 자연이자율 급락 충격에 통화정책 대응이 제약되면, 모형은 <strong>심각한 경기침체와 디플레이션, 금융위기의 복합국면</strong>을 보입니다. 산출은 추락하고 실업 증가, 인플레이션 급락, 정책금리 0, 그러나 실질금리 높음, 기업가 순자산 대량 파괴, 은행 부실과 신용경색 (모형엔 은행직접 표현 없지만 위험스프레드↑로 나타남). <strong>재정정책</strong> 등 다른 대응이 없는 한 모형 내에서 이 상황은 (_{nr}=0.9) 때문에 상당 기간 지속됩니다. 산출갭은 서서히 개선되겠지만(자연이자율 서서히 정상화), 그동안 잃어버린 생산과 후생 손실은 막대합니다. 이 서술은 2008 금융위기나 2020 팬데믹 초기의 상황과 흡사한 면이 있습니다. BGG 모형은 이러한 <strong>실물-금융 교착 상태</strong>를 제대로 잡아내는 데 유용하며, 여기선 더 나아가 <strong>Forward Guidance 정책</strong>의 효과까지 살펴볼 수 있습니다.</p></li>
+</ul>
+</section>
+<section id="zlb-하에서-forward-guidance-장기간-0금리-고정의-효과" class="level3">
+<h3 class="anchored" data-anchor-id="zlb-하에서-forward-guidance-장기간-0금리-고정의-효과">ZLB 하에서 Forward Guidance: 장기간 0금리 고정의 효과</h3>
+<p><strong>시나리오 (B):</strong> 위와 비슷한 자연이자율 급락 상황에서, 중앙은행이 <strong>명목금리를 향후 상당 기간 0%에 묶어두겠다고 공개적으로 약속</strong>했다고 가정합시다. 예컨대 충격 발생 시점에 “앞으로 8분기(2년) 동안 정책금리를 0%로 유지”하겠다고 선제적 지침을 발표하는 것입니다. 이는 통화정책의 <strong>비전형적 수단</strong> 중 하나로, 미래 정책경로에 대한 강력한 신호를 줌으로써 현재 기대를 관리하는 전략입니다. 모형의 agents(가계, 기업)는 합리적 기대를 가지므로, 중앙은행 발표를 믿고 금리가 8분기째 0일 것을 예상합니다. 그렇다면 이 상황이 (A)와 어떻게 달라지는지 단계별로 설명하겠습니다:</p>
+<ul>
+<li><p><strong>기대경로 변화:</strong> Forward Guidance가 나오자마자, 민간의 <strong>미래 인플레이션 기대 (, , …)</strong>와 <strong>미래 금리 기대 (r^n<em>{t+1}, r^n</em>{t+2}, …)</strong>가 변합니다. 중앙은행이 금리를 올리지 않겠다고 하니, 자연이자율이 추후 회복되더라도 한동안 실질금리가 <strong>자연수준보다 낮게</strong> 유지될 것이라는 믿음이 형성됩니다. 이는 <strong>미래의 수요를 자극</strong>할 전망으로 이어집니다. 특히, 먼 장래보다는 비교적 <strong>가까운 미래 (1~2년 내)</strong>의 정책이 확실히 완화적이라 정해졌기 때문에 Euler 방정식에 큰 영향이 있습니다. 가계는 “앞으로 2년간 돈 빌릴 비용이 매우 낮겠군, 그리고 중앙은행이 일부러 경기를 뜨겁게 할 테니 인플레이션도 오를 거야”라고 기대할 수 있습니다. 그러면 <strong>향후 소비</strong> (c<em>{t+1}, c</em>{t+2},…)에 대한 기대 경로가 상향조정되고, 심지어 기대인플레이션도 약간씩 목표치에 근접하도록 올라갈 겁니다. Euler 방정식 (c<em>t = c</em>{t+1} - (r^n<em>t - - nr</em>t))를 보면, 이때 (r^n_t - - nr<em>t)는 여전히 양(+)일지라도 (c</em>{t+1}) 증가 효과가 있습니다. Forward Guidance 없이는 (c_{t+1})도 침체라 (c_t)를 더 줄였겠지만, 이제 “미래엔 좋아질테니 지금 너무 움츠리지 말자”는 기대가 생겨 <strong>현재소비 감소 폭이 줄어듭니다</strong>. <strong>투자</strong>의 경우에도 비슷합니다. 가령 기업은 금리가 0이 오래 가면 투자프로젝트의 할인율이 낮아지니 채산성이 좋아진다고 판단하여, 완전히 투자를 멈추지 않고 일부 유지할 수 있습니다. 또한 기대인플레이션 상승은 현재 실질이자율을 떨어뜨려, 위험스프레드가 주는 압박도 일부 희석될 수 있습니다. (디플레이션 예상 -&gt; 실질부채부담 증가 효과가 경감됨)</p></li>
+<li><p><strong>실제 전개:</strong> Forward Guidance 덕분에 경제추락이 완화되었다고 해도, 초기 충격이 워낙 크다면 여전히 산출갭은 마이너스, 인플레이션은 낮겠지만, <strong>그 깊이가 얕아지게</strong> 됩니다. 예컨대 FG 없이는 (y_t^{min} = -5%)였다면, FG로 -3% 정도에서 바닥치고 반등할 수 있습니다. 인플레이션도 -2%까지 떨어질 것을 -0.8%에서 막는다든지의 차이입니다. 중앙은행은 금리를 어차피 0으로 유지 중이라 단기 대응은 같지만, <strong>민간의 기대가 더 낙관적</strong>이라 경제주체들의 행동이 덜 위축된 것입니다. 이로써 금융부문의 악순환도 덜 심화됩니다. (n_t) 감소가 덜하고, (lev_t) 상승도 조금 억제되어 (lev) 부담이 낮아집니다. 위험스프레드 상승이 완만하면 투자 하락폭도 줄고, (q_t)가 너무 내려가지 않아 (n_t)를 더 지켜주는 긍정피드백이 일어납니다.</p></li>
+<li><p><strong>정책 의도:</strong> Forward Guidance의 핵심은 <strong>“미래에 약간 인플레이션 과열을 용인하여 현재의 디플레이션을 만회한다”</strong>는 약속입니다. 중앙은행 입장에서는 나중에 자연이자율이 회복되면 사실 금리를 올려야 하지만, FG로 인해 일정 기간 올리지 못하게 스스로 구속한 것이죠. 그 기간에는 경제가 잠시 과열될 수 있습니다. 그러나 이는 지금 심각한 침체를 완화하기 위한 의도적 조치로, <strong>“일종의 후속 보상”</strong>이라 할 수 있습니다. Eggertsson &amp; Woodford가 설명한 바와 같이, ZLB 상황에서는 <strong>미래에 물가가 약간 더 오르도록(인플레 기대 상승)</strong> 함으로써 현재 실질금리를 떨어뜨려 수요를 살리는 정책이 효과적입니다. FG는 바로 그런 메커니즘을 노린 것입니다. 모형에서 보면 FG로 미래 금리를 누르니 미래 (y, )가 평소보다 높아지고 (약간 과열), 그 기대가 현재를 떠받쳐 현재 (y, )의 최저치를 덜 낮게 만들며, 전체 경기궤적의 <strong>U자 곡선이 덜 깊게</strong> 됩니다.</p></li>
+<li><p><strong>한계와 위험:</strong> 물론 Forward Guidance에는 <strong>신뢰성 문제</strong>가 따라붙습니다. 중앙은행이 나중에 약속을 어기고 일찍 금리를 올려버리면, 민간 기대가 배신당해 경제에 충격을 줄 수 있습니다. 그래서 FG가 효과를 보려면 <strong>강력한 커뮤니케이션과 제도적 장치</strong> (예: “일정 기간 또는 인플레이션 일정 수준 도달까지 금리인상 안한다”와 같은 조건부 약속)가 필요합니다. 모형 자체는 이러한 기대이행 문제를 다루지 않지만, 현실에서는 매우 중요합니다. 또한 FG로 경기를 너무 띄우면 나중에 <strong>인플레이션이 목표치를 초과</strong>하거나 자산버블이 생길 위험도 있습니다. 본 모형에서는 (_f) 같은 항을 통해 금융안정을 조금 고려하긴 하지만, FG 기간에는 오히려 레버리지 높아지는 것을 용인하게 될 수도 있습니다 (저금리가 오래 지속되니 부채가 늘 가능성). 따라서 FG는 <strong>양날의 검</strong>으로, 적정 기간과 강도를 잘 설정해야 합니다.</p></li>
+<li><p><strong>결과 비교:</strong> 결국 Forward Guidance를 실시한 시나리오(B)에서는, <strong>같은 자연이자율 충격에 대해 경기침체의 깊이와 지속기간이 완화</strong>됩니다. 인플레이션도 깊은 디플레이션에 빠지지 않고 비교적 빨리 목표 수준으로 회귀할 수 있습니다. 산출갭도 ZLB 탈출 후(2년 후 금리인상 재개 시점)에는 플러스 영역으로 오르며, FG 없었다면 잃어버렸을 생산을 어느 정도 만회하는 <strong>메이크업 효과</strong>가 나타납니다. 금융가속기의 증폭효과도 줄어 전체 변동성이 낮아집니다. 이처럼 <strong>명확한 정책 약속이 기대를 안정시키고 자금흐름을 유지시켜 위기 상황에서 유용한 대응책이 될 수 있음</strong>을 모형이 보여줍니다. 다만 모형은 민간이 이 신호를 100% 신뢰하고 합리적으로 행동한다는 이상 조건이므로, 실제 정책에서는 FG의 효과가 불확실하고 때로는 예상만큼 크지 않을 수 있다는 점을 언급해둘 필요가 있습니다.</p></li>
+</ul>
+<p><strong>요약:</strong> 자연이자율에 큰 음의 충격이 발생하면 모형은 <strong>심각한 침체와 금융위기</strong> 국면을 재현하며, Forward Guidance로 장기간 0금리를 약속하면 <strong>민간의 미래에 대한 낙관 기대를 높여 현재 침체를 완화</strong>시킬 수 있음을 보여줍니다. 이는 현실에서 중앙은행들이 ZLB 상황에서 <strong>커뮤니케이션 강화</strong>와 <strong>기대관리</strong>에 힘쓰는 이유를 뒷받침합니다. BGG 금융가속기 모형에서 Forward Guidance의 도입은 흥미로운 상호작용을 시사하는데, 저금리가 오래 유지되면 금융시장에 안도감을 주어 위험스프레드가 덜 오르지만, 한편으론 부채 축적을 부추겨 <strong>미래 취약성</strong>을 키울 수도 있습니다. 이런 트레이드오프까지 종합적으로 고려하는 것은 확장된 모형(예: 거시건전성 정책 규제 병행 등)의 영역일 것입니다.</p>
+</section>
+</section>
+<section id="결론-맺음말" class="level2">
+<h2 class="anchored" data-anchor-id="결론-맺음말">결론 (맺음말)</h2>
+<p>以上을 통해 <strong>BGG 기반 신케인즈 DSGE 모형</strong>의 핵심 방정식과 경제적 의미를 모두 살펴보았습니다. 각 방정식은 가계의 소비 결정, 기업의 가격 결정, 기업가의 투자 및 차입 결정, 그리고 정책당국의 금리 결정 등 <strong>경제의 다양한 의사결정과 제약</strong>을 수량화하고 있음을 알 수 있습니다. 특히 이 모형은 <strong>금융부문의 역할</strong>을 강조하여, 순자산과 레버리지 변동이 어떻게 <strong>실물경제에 파급</strong>되고 <strong>충격을 증폭</strong>시키는지 명확히 보여줍니다. 마지막으로 다룬 시나리오들은 이러한 메커니즘이 현실적인 상황에서 어떤 모습을 보이는지 가늠케 해주었습니다. <strong>자연이자율 충격</strong>은 경기침체의 근원을 이해하게 하고, <strong>명목금리 제약과 Forward Guidance</strong>는 비전통적 정책의 중요성을 일깨워줍니다. 이 모형은 학부 수준에서 이해하기엔 방정식이 많고 복잡해 보일 수 있지만, 각각의 의미를 직관적으로 풀어보면 우리가 거시경제에서 접하는 원리들과 크게 다르지 않음을 알 수 있습니다. 결국 <strong>총수요-총공급, 통화정책, 그리고 금융시장</strong> – 이 세 축의 상호작용이 경제를 움직이며, 모델은 이를 체계적으로 연결짓고 있을 뿐입니다. 이러한 DSGE 모형 분석을 통해 학생들은 <strong>이론과 현실의 연결고리</strong>를 보다 입체적으로 이해할 수 있고, 정책 충격이나 외부 충격에 대한 경제의 반응을 시뮬레이션해봄으로써 거시경제정책 수립에 필요한 통찰을 얻게 될 것입니다.</p>
+<p>참고 문헌: Bernanke, Gertler, Gilchrist (1999), Gertler &amp; Kiyotaki (2010), Christiano et al.&nbsp;(2014) 등 금융마찰을 포함한 DSGE 연구, 및 Eggertsson &amp; Woodford (2003) 등의 ZLB 상황 정책 연구.</p>
+<p><strong>End of document.</strong></p>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

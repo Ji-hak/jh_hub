@@ -9,8 +9,9 @@ import platform
 
 cmdclass = {}
 
-install_requires = ['future',
-                    'dataset == 0.8']
+install_requires = ['future']
+
+
 
 
 readthedocs = os.environ.get('READTHEDOCS') == 'True'
@@ -20,7 +21,7 @@ if not readthedocs:
         install_requires += ['numpy >= 1.10.2']
         if ('APPVEYOR' not in os.environ) or ('TRAVIS' not in os.environ):
             install_requires += ['pandas >= 0.17.1',
-                                 'bokeh == 0.12.16',
+                                 'bokeh',
                                  'tornado']
 
 
